@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { INITIAL_RISK, addVerdict } from '../lib/risk.js';
 import { listDemoClips, sendChunk, startDemoClip, startMic } from '../lib/audio.js';
 import { speak } from '../lib/speak.js';
-import { withDemoFallback } from '../lib/demoFallback.js';
+import { demoVerdict } from '../lib/demoFallback.js';
 import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 // Plain-language risk states. Never shows HTTP codes, model names or JSON to the user.
@@ -57,8 +57,8 @@ export default function CallCheck({ onVerify, onExit, initialMode = null }) {
     return (blob) => {
       if (callId !== callIdRef.current) return;
       setPending((p) => p + 1);
-      sendChunk(blob).then((geminiVerdict) => {
-        const verdict = clip ? withDemoFallback(geminiVerdict, clip) : geminiVerdict;
+      // Live mic: Gemini's verdict as-is. Demo clip: Gemini first, labelled fixture if it fails or takes > 22 s.
+      (clip ? demoVerdict(sendChunk(blob), clip) : sendChunk(blob)).then((verdict) => {
         setPending((p) => p - 1);
         if (callId === callIdRef.current) setRisk((r) => addVerdict(r, verdict));
       });

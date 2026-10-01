@@ -35,3 +35,30 @@ export function withDemoFallback(verdict, clipName) {
   console.info(`Demo Mode: AI check unavailable; showing bundled fixture result for "${clipName}" (not a Gemini result).`);
   return fixture;
 }
+
+export const DEMO_DEADLINE_MS = 22_000;
+
+/**
+ * Demo Mode only: wait for Gemini's verdict, but if it has not answered within `ms` (it may still be retrying a
+ * 429/503) and this is a known bundled demo clip, settle on the clip's labelled fixture instead. A later Gemini
+ * answer for the same chunk is ignored so the chunk is counted once. Unknown clips just keep waiting for Gemini.
+ */
+export function demoVerdict(geminiPromise, clipName, ms = DEMO_DEADLINE_MS) {
+  const fixture = demoFixtureFor(clipName);
+  if (!fixture) return geminiPromise;
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.info(`Demo Mode: no AI answer within ${ms / 1000}s; showing bundled fixture result for "${clipName}" (not a Gemini result).`);
+      resolve(fixture);
+    }, ms);
+    geminiPromise.then((v) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(withDemoFallback(v, clipName));
+    });
+  });
+}

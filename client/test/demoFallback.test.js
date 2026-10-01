@@ -50,3 +50,42 @@ describe('Demo Mode fallback (bundled demo clips only)', () => {
     }
   });
 });
+
+import { demoVerdict, DEMO_DEADLINE_MS } from '../src/lib/demoFallback.js';
+
+describe('Demo Mode 22-second deadline', () => {
+  const never = () => new Promise(() => {});
+  it('deadline is 22 s', () => expect(DEMO_DEADLINE_MS).toBe(22_000));
+
+  it('Gemini still slow after 22 s → bundled clip gets its labelled fixture', async () => {
+    vi.useFakeTimers();
+    try {
+      let out;
+      demoVerdict(never(), '1-fake-son-asks-for-money.mp3').then((v) => { out = v; });
+      await vi.advanceTimersByTimeAsync(21_999);
+      expect(out).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(2);
+      expect(out).toMatchObject({ risk: 'high', source: 'demo-fixture' });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('Gemini answers in time → Gemini result wins; late fixture never fires', async () => {
+    vi.useFakeTimers();
+    try {
+      let out;
+      demoVerdict(Promise.resolve(GEMINI_LOW), '1-fake-son-asks-for-money.mp3').then((v) => { out = v; });
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(out).toBe(GEMINI_LOW);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('Gemini fails fast (unknown) → fixture right away', async () => {
+    const v = await demoVerdict(Promise.resolve(UNKNOWN), '3-safe-call-from-family.mp3');
+    expect(v).toMatchObject({ risk: 'low', source: 'demo-fixture' });
+  });
+
+  it('unrecognised recordings get no deadline: they wait for Gemini', async () => {
+    const p = Promise.resolve(UNKNOWN);
+    expect(demoVerdict(p, 'my-own-recording.mp3')).toBe(p);
+  });
+});
