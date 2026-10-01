@@ -149,6 +149,7 @@ export default function CallCheck({ onVerify, onExit, initialMode = null }) {
 
   return (
     <main className="screen">
+      <button type="button" className="back" onClick={exit}>← Back</button>
       <span className="source">{running === 'mic' ? '🎙 Microphone' : `▶ Demo: ${clipLabel(running)}`}</span>
 
       {view ? (

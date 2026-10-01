@@ -24,6 +24,7 @@ export default function VerifyWait({ member, v, onMatch, onMismatch, onDone }) {
   if (v.state === 'requested' || v.state === 'challenged') {
     return (
       <main className="screen">
+        <button type="button" className="back" onClick={onDone}>← Cancel</button>
         <span className="eyebrow">Verification</span>
         <h1>Request sent to {member.name}</h1>
         <p className="lead">Waiting for them to verify on their device…</p>
@@ -45,6 +46,7 @@ export default function VerifyWait({ member, v, onMatch, onMismatch, onDone }) {
     const pick = (fn) => { if (answered) return; setAnswered(true); fn(); };
     return (
       <main className="screen">
+        <button type="button" className="back" disabled={answered} onClick={onDone}>← Cancel</button>
         <span className="eyebrow">🔐 {member.name}'s device passed the secure check</span>
         <h1>Ask them to tell you these two words</h1>
         <div className="words" aria-label="verification words">
@@ -67,6 +69,7 @@ export default function VerifyWait({ member, v, onMatch, onMismatch, onDone }) {
 
   return (
     <main className={`screen result ${result.cls}`}>
+      <button type="button" className="back" onClick={onDone}>← Back to home</button>
       <div className="result-badge" aria-hidden="true">{result.icon}</div>
       <h1>{result.title}</h1>
       <p className="lead">{result.text}</p>

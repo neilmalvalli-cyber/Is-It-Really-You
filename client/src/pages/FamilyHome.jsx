@@ -1,9 +1,10 @@
 import { ShieldMark } from '../components/Brand.jsx';
 
 // Family dashboard. Pairing (QR) lives on its own screen with a normal Back button.
-export default function FamilyHome({ profile, onPair }) {
+export default function FamilyHome({ profile, onPair, onChangeRole }) {
   return (
     <main className="screen wide">
+      <button type="button" className="back" onClick={onChangeRole}>← Change role</button>
       <div className="family-grid">
         <div className="hero">
           <span className="eyebrow">Family member · {profile.relation}</span>

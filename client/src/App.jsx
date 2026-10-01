@@ -153,7 +153,7 @@ export default function App() {
     } else if (screen === 'pair') {
       page = <FamilyPair profile={familyProfile} deviceId={deviceId} onBack={() => setScreen('home')} onReset={resetFamily} />;
     } else {
-      page = <FamilyHome profile={familyProfile} onPair={() => setScreen('pair')} />;
+      page = <FamilyHome profile={familyProfile} onPair={() => setScreen('pair')} onChangeRole={() => pickRole(undefined)} />;
     }
   } else if (!parentName) {
     page = <ParentSetup onBack={() => pickRole(undefined)} onDone={(n) => { setSetting('parentName', n); setParentName(n); }} />;

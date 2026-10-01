@@ -33,6 +33,7 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   if (f.state === 'pending' && step === 'ask') {
     return (
       <main className="screen">
+        <button type="button" className="back" onClick={onClose}>← Back</button>
         <span className="eyebrow">Incoming verification</span>
         <h1>📞 {f.parentName} is asking you to verify</h1>
         <p className="lead">They need you to confirm it's really you calling them right now.</p>
@@ -74,6 +75,7 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   if (f.state === 'done') {
     return (
       <main className="screen">
+        <button type="button" className="back" onClick={onClose}>← Back</button>
         <span className="eyebrow">✓ Verified on your device</span>
         <h1>Your verification words</h1>
         <p className="lead">Tell these two words to {f.parentName}.</p>
@@ -89,10 +91,11 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   const denied = f.state === 'denied';
   return (
     <main className={`screen result ${denied ? 'red' : 'yellow'}`}>
+      <button type="button" className="back" onClick={onClose}>← Back</button>
       <div className="result-badge" aria-hidden="true">{denied ? '✕' : '!'}</div>
       <h1>{denied ? "You said it's not you" : 'Could not verify'}</h1>
       <p className="lead">{denied ? `${f.parentName} has been told: do not pay.` : (FAIL_TEXT[f.reason] || 'Ask them to try again.')}</p>
-      <button className="big secondary" onClick={onClose}>Back</button>
+      <button className="big secondary" onClick={onClose}>Close</button>
     </main>
   );
 }
