@@ -18,15 +18,16 @@ const TACTIC_TEXT = {
 
 export default function CallCheck({ onVerify, onExit }) {
   const [risk, setRisk] = useState(INITIAL_RISK);
-  const [mode, setMode] = useState(null); // null | 'mic' | clip filename
-  const [clips, setClips] = useState([]);
+  const [mode, setMode] = useState(null); // null | 'pick' (demo clip list) | 'mic' | clip filename | 'ended'
+  const [clips, setClips] = useState(null); // null = loading, [] = none found, false = could not load
   const [pending, setPending] = useState(0);
   const [error, setError] = useState('');
   const [popupClosed, setPopupClosed] = useState(false);
   const stopRef = useRef(null);
   const callIdRef = useRef(0);
 
-  useEffect(() => { listDemoClips().then(setClips); return () => stopRef.current?.(); }, []);
+  const loadClips = () => { setClips(null); listDemoClips().then(setClips); };
+  useEffect(() => { loadClips(); return () => stopRef.current?.(); }, []);
   useEffect(() => { if (SPOKEN[risk.level]) speak(SPOKEN[risk.level]); }, [risk.level]);
 
   function onChunk(blob) {
@@ -50,7 +51,7 @@ export default function CallCheck({ onVerify, onExit }) {
         : await startDemoClip(`/demo-audio/${encodeURIComponent(which)}`, onChunk, () => setMode((m) => (m === which ? 'ended' : m)));
       setMode(which);
     } catch (err) {
-      setMode(null);
+      setMode(which === 'mic' ? null : 'pick');
       setError(which === 'mic' ? 'Microphone not allowed. Allow it in the browser and try again.' : `Could not play clip (${err.message}).`);
     }
   }
@@ -72,13 +73,30 @@ export default function CallCheck({ onVerify, onExit }) {
         <p>Put the call on <strong>speaker</strong>, then tap the button.</p>
         <button className="big" onClick={() => start('mic')}>🎙️ Start listening</button>
         {error && <div className="banner red" role="alert">⛔ {error}</div>}
-        {clips.length > 0 && (
-          <section className="demo">
-            <h2>Demo mode</h2>
-            {clips.map((c) => <button key={c} className="big secondary" onClick={() => start(c)}>▶️ {c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</button>)}
-          </section>
-        )}
+        <section className="demo">
+          <button className="big secondary" onClick={() => { setError(''); setMode('pick'); }}>🎬 Demo Mode (play a recorded clip)</button>
+        </section>
         <button className="big secondary" onClick={onExit}>Back</button>
+      </main>
+    );
+  }
+
+  if (mode === 'pick') {
+    return (
+      <main className="screen">
+        <h1>🎬 Demo Mode</h1>
+        <p>Pick a recorded call. It plays out loud and is checked by Gemini instead of the microphone.</p>
+        {error && <div className="banner red" role="alert">⛔ {error}</div>}
+        {clips === null && <p>⏳ Loading clips…</p>}
+        {clips === false && <div className="banner yellow">⚠️ Could not load the clip list from the server.</div>}
+        {Array.isArray(clips) && clips.length === 0 && (
+          <div className="banner yellow">⚠️ No clips found. Put .mp3, .m4a, .wav, .ogg or .webm files in the <code>demo-audio/</code> folder next to the server, then tap Refresh.</div>
+        )}
+        {Array.isArray(clips) && clips.map((c) => (
+          <button key={c} className="big" onClick={() => start(c)}>▶️ {c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</button>
+        ))}
+        <button className="big secondary" onClick={loadClips}>🔄 Refresh list</button>
+        <button className="big secondary" onClick={() => { setError(''); setMode(null); }}>Back</button>
       </main>
     );
   }

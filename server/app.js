@@ -37,7 +37,7 @@ export function isValidMessage(event, msg) {
 const MAX_AUDIO = 2 * 1024 * 1024; // rule 11
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEMO_DIR = path.join(ROOT, 'demo-audio');
-const DEMO_RE = /\.(webm|ogg|mp3|m4a|wav)$/i;
+const DEMO_RE = /\.(webm|ogg|mp3|m4a|wav|aac|flac)$/i;
 
 export function createAppServer({ log = console.log, generate } = {}) {
   const app = express();
@@ -69,6 +69,7 @@ export function createAppServer({ log = console.log, generate } = {}) {
   app.get('/api/demo-clips', (_req, res) => {
     let files = [];
     try { files = readdirSync(DEMO_DIR).filter((f) => DEMO_RE.test(f)).sort(); } catch { /* no folder */ }
+    log(`demo clips: ${files.length} in ${DEMO_DIR}`);
     res.json(files);
   });
   app.use('/demo-audio', express.static(DEMO_DIR));

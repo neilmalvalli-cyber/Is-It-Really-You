@@ -1,6 +1,8 @@
 // Records audio in standalone 15 s chunks (each chunk is a complete webm/ogg file) and sends them to the
 // server for the Gemini scam check. Audio is only held in memory and dropped after upload.
 export const CHUNK_MS = 15_000;
+// ngrok's free tier can answer API calls with its HTML warning page; this header skips it.
+const NGROK_HEADERS = { 'ngrok-skip-browser-warning': '1' };
 const MIN_CHUNK_BYTES = 2_000;
 
 function pickMime() {
@@ -42,7 +44,7 @@ export async function sendChunk(blob) {
   try {
     const form = new FormData();
     form.append('audio', blob, blob.type.includes('ogg') ? 'chunk.ogg' : 'chunk.webm');
-    const res = await fetch('/api/scam-check', { method: 'POST', body: form });
+    const res = await fetch('/api/scam-check', { method: 'POST', body: form, headers: NGROK_HEADERS });
     return await res.json();
   } catch {
     return { risk: 'unknown' };
@@ -82,10 +84,10 @@ export async function startDemoClip(url, onChunk, onEnded) {
 
 export async function listDemoClips() {
   try {
-    const res = await fetch('/api/demo-clips');
+    const res = await fetch('/api/demo-clips', { headers: NGROK_HEADERS });
     const list = await res.json();
-    return Array.isArray(list) ? list : [];
+    return Array.isArray(list) ? list : false;
   } catch {
-    return [];
+    return false; // could not load (shown to the user, not hidden)
   }
 }

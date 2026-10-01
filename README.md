@@ -21,8 +21,8 @@ Tests: `npm test` (zk proof, session state machine, relay integration, PIN encry
 
 ## Demo clips (Gemini scam check, demo mode)
 
-Put pre-recorded clips in `demo-audio/` (`.mp3`, `.m4a`, `.wav`, `.ogg` or `.webm`, ideally 20–40 s). They appear as
-buttons under "Demo mode" on the parent's CHECK THIS CALL screen, sorted by file name, e.g.
+Put pre-recorded clips in `demo-audio/` (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.webm`, `.aac` or `.flac`, ideally 20–40 s). Parent: **CHECK THIS CALL → 🎬 Demo Mode** lists them as
+buttons, sorted by file name (tap 🔄 Refresh list after adding files), e.g.
 `1-fake-son.mp3`, `2-digital-arrest.mp3`, `3-normal-call.mp3`. The clip plays out loud and the same audio is sent to
 Gemini in 15-second chunks. Needs `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`) in `server/.env`; without a key every
 chunk returns `{"risk":"unknown"}` → yellow "Be careful".

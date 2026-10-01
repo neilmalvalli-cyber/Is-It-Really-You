@@ -1,5 +1,6 @@
 // /api/scam-check with Gemini mocked (no network, no real key).
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { writeFileSync, rmSync } from 'node:fs';
 import { createAppServer } from '../../server/app.js';
 import { validateVerdict, SYSTEM_PROMPT } from '../../server/gemini.js';
 
@@ -128,8 +129,21 @@ describe('validateVerdict', () => {
 });
 
 describe('demo clips', () => {
-  it('lists /demo-audio clips', async () => {
-    const res = await fetch(`${url}/api/demo-clips`);
-    expect(Array.isArray(await res.json())).toBe(true);
+  it('lists audio files in demo-audio/ and serves them; ignores other files', async () => {
+    const dir = new URL('../../demo-audio/', import.meta.url);
+    const clip = new URL('zz-unit-test-clip.mp3', dir);
+    const other = new URL('zz-unit-test-notes.txt', dir);
+    writeFileSync(clip, Buffer.from('ID3-fake-audio'));
+    writeFileSync(other, 'notes');
+    try {
+      const list = await (await fetch(`${url}/api/demo-clips`)).json();
+      expect(list).toContain('zz-unit-test-clip.mp3');
+      expect(list).not.toContain('zz-unit-test-notes.txt');
+      const res = await fetch(`${url}/demo-audio/zz-unit-test-clip.mp3`);
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('ID3-fake-audio');
+    } finally {
+      rmSync(clip); rmSync(other);
+    }
   });
 });
