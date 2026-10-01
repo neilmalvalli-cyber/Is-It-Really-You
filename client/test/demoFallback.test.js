@@ -39,8 +39,8 @@ describe('Demo Mode fallback (bundled demo clips only)', () => {
     expect(v.risk).toBe('high');
     expect(v.source).toBe('demo-fixture');
     expect(v.note).toMatch(/AI check was unavailable/); // labelled in code
-    expect(v.reason).toBe(''); // nothing extra on screen
-    expect(addVerdict(INITIAL_RISK, v).reasons).toEqual([]); // no explanation or tactic chips shown
+    expect(v.reason).toMatch(/son/); // fixed description of the bundled recording
+    expect(addVerdict(INITIAL_RISK, v).reasons[0].tactics).toContain('money_request'); // shown with its tactics
     expect(addVerdict(INITIAL_RISK, v).level).toBe('red');
     expect(addVerdict(INITIAL_RISK, withDemoFallback(UNKNOWN, '3-safe-call.mp3')).level).toBe('green');
   });
