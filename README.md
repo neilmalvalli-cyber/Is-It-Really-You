@@ -17,4 +17,4 @@ Open the printed `https://…` URL on the parent phone and the family laptop.
 
 Demo-day mode (faster, one process): `npm run build && npm start`, then tunnel port **3000** instead.
 
-Tests: `npm test` (zk, PIN encryption, pairing code).
+Tests: `npm test` (zk proof, session state machine, relay integration, PIN encryption, pairing code).
