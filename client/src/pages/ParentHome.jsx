@@ -1,9 +1,12 @@
 const ICON = { son: '👨', daughter: '👩', grandson: '👦', granddaughter: '👧', other: '🧑' };
 
-export default function ParentHome({ parentName, members, onAdd, onCheckCall, onVerify, onChangeRole }) {
+// One main action (UI rule): CHECK THIS CALL. Verification is reached from the call check (VERIFY).
+export default function ParentHome({ parentName, members, onCheckCall, onAdd, onChangeRole }) {
   return (
     <main className="screen">
       <h1>👴 Hello, {parentName}</h1>
+      <p>Got a call asking for money? Put it on speaker and tap:</p>
+      <button className="big main-action" onClick={onCheckCall}>📞 CHECK THIS CALL</button>
       <h2>My family</h2>
       {members.length === 0 && <p>No family paired yet.</p>}
       <ul className="members">
@@ -14,8 +17,6 @@ export default function ParentHome({ parentName, members, onAdd, onCheckCall, on
           </li>
         ))}
       </ul>
-      <button className="big" onClick={onCheckCall}>📞 CHECK THIS CALL</button>
-      <button className="big secondary" onClick={onVerify}>🔐 Verify a caller</button>
       <button className="big secondary" onClick={onAdd}>➕ Add family member</button>
       <button type="button" className="link" onClick={onChangeRole}>Change role</button>
     </main>

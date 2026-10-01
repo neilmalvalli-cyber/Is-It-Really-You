@@ -180,7 +180,6 @@ export default function App() {
         members={members}
         onAdd={() => { setToast(''); setScreen('pair'); }}
         onCheckCall={() => { setToast(''); setScreen('call'); }}
-        onVerify={() => { setToast(''); setScreen('who'); }}
         onChangeRole={() => pickRole(undefined)}
       />
     );
