@@ -23,7 +23,8 @@ Tests: `npm test` (zk proof, session state machine, relay integration, PIN encry
 
 Put pre-recorded clips in `demo-audio/` (`.mp3`, `.m4a`, `.wav`, `.ogg`, `.webm`, `.aac` or `.flac`, ideally 20–40 s). Parent: **CHECK THIS CALL → 🎬 Demo Mode** lists them as
 buttons, sorted by file name (tap 🔄 Refresh list after adding files), e.g.
-`1-fake-son.mp3`, `2-digital-arrest.mp3`, `3-normal-call.mp3`. The clip plays out loud and the same audio is sent to
+`1-fake-son-asks-for-money.mp3`, `2-fake-police-digital-arrest.mp3`, `3-safe-call-from-family.mp3` (see
+`demo-audio/README.md`; these exact names also enable Demo Mode's labelled offline fallback if Gemini is unavailable). The clip plays out loud and the same audio is sent to
 Gemini in 15-second chunks. Needs `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`) in `server/.env`; without a key every
 chunk returns `{"risk":"unknown"}` → yellow "Be careful".
 

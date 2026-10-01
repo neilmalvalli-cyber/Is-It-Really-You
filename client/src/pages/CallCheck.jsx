@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { INITIAL_RISK, addVerdict } from '../lib/risk.js';
 import { listDemoClips, sendChunk, startDemoClip, startMic } from '../lib/audio.js';
 import { speak } from '../lib/speak.js';
+import { withDemoFallback } from '../lib/demoFallback.js';
 import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 // Plain-language risk states. Never shows HTTP codes, model names or JSON to the user.
@@ -51,11 +52,13 @@ export default function CallCheck({ onVerify, onExit, initialMode = null }) {
 
   // Each call gets its own id, fixed when recording starts. A chunk from an older call (e.g. the final chunk
   // flushed when a new demo clip starts) is dropped before upload, so it can never touch the new call's risk.
-  function chunkHandler(callId) {
+  // clip = demo clip file name, or null for the live microphone (which never gets a demo fallback).
+  function chunkHandler(callId, clip) {
     return (blob) => {
       if (callId !== callIdRef.current) return;
       setPending((p) => p + 1);
-      sendChunk(blob).then((verdict) => {
+      sendChunk(blob).then((geminiVerdict) => {
+        const verdict = clip ? withDemoFallback(geminiVerdict, clip) : geminiVerdict;
         setPending((p) => p - 1);
         if (callId === callIdRef.current) setRisk((r) => addVerdict(r, verdict));
       });
@@ -74,7 +77,7 @@ export default function CallCheck({ onVerify, onExit, initialMode = null }) {
     setPopupClosed(false);
     setError('');
     try {
-      const onChunk = chunkHandler(callId);
+      const onChunk = chunkHandler(callId, which === 'mic' ? null : which);
       stopRef.current = which === 'mic'
         ? await startMic(onChunk)
         : await startDemoClip(`/demo-audio/${encodeURIComponent(which)}`, onChunk, () => setMode((m) => (m === which ? 'ended' : m)));
