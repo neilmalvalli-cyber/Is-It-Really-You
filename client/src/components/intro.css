@@ -1,0 +1,167 @@
+/*
+ * Logo intro, ported from Provenrely (frontend/components/landing/intro.css).
+ * Scenes 1–5 run on CSS time in a 1440×900 box scaled to the viewport. Really You has no landing hero to fly
+ * into, so the hand-off is a fade of the whole overlay (driven from Intro.jsx).
+ */
+
+/* Only shown while <html data-intro="playing|revealing"> (set before first paint). */
+.ix-overlay { display: none; }
+html[data-intro="playing"] .ix-overlay,
+html[data-intro="revealing"] .ix-overlay { display: block; }
+
+/* Elements the intro hands off to stay hidden until it lands, then cross-fade in. */
+html[data-intro="playing"] [data-intro-target],
+html[data-intro="revealing"] [data-intro-target] { opacity: 0 !important; }
+.intro-fade { transition: opacity 0.6s ease-out; }
+html[data-intro="playing"] .intro-fade,
+html[data-intro="revealing"] .intro-fade { opacity: 0; }
+
+/* Hero copy: hidden during the intro, then rises in as the symbol lands. */
+html[data-intro="playing"] .intro-content { opacity: 0 !important; }
+html[data-intro="revealing"] .intro-content,
+html[data-intro="done"] .intro-content {
+  animation: ix-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--intro-delay, 0s) both;
+}
+@keyframes ix-rise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.ix-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  /* no background here: fading a full-screen background colour repaints every frame.
+     .ix-solid carries it and fades by opacity (composited) at the hand-off. */
+}
+.ix-overlay.ix-handoff { pointer-events: none; }
+.ix-solid { background: #e9e7ea url("/environment/marble-still.webp") center / cover no-repeat; }
+/* Hold on the first (dark) frame until the app is idle and the artwork is decoded, so
+   main-thread-painted effects (filters, clip-paths, SVG strokes) never compete with
+   hydration and stutter. The boot script starts it anyway after 2.5s as a failsafe. */
+.ix-overlay:not(.ix-run) * { animation-play-state: paused !important; }
+
+.ix-bg { position: absolute; inset: 0; }
+
+/*
+ * Hand-off fades (backgrounds out; hero image in, then halo out) are run from intro.tsx
+ * with the Web Animations API. They can't be CSS transitions: these elements also carry
+ * finished CSS entrance animations, which override transitions and made them jump.
+ * The intro artwork carries a faint full-square haze that would show as a box over the
+ * lighter page, hence the swap to the soft-edged hero image for the flight.
+ */
+.ix-landing-mark { position: absolute; opacity: 0; pointer-events: none; }
+
+.ix-full { position: absolute; inset: 0; }
+/* Centred and scaled via --ix-s, which the boot script sets before first paint. */
+.ix-box { position: absolute; left: 50%; top: 50%; width: 1440px; height: 900px; transform: translate(-50%, -50%) scale(var(--ix-s, 1)); transform-origin: 50% 50%; }
+.ix-lg { position: absolute; inset: 0; background-image: url("/brand/intro-logo.webp"); background-size: 100% 100%; background-repeat: no-repeat; }
+
+/* ---------- atmosphere ---------- */
+.ix-bgRad { background: radial-gradient(52% 58% at 50% 45%, rgba(255, 255, 255, 0.82) 0%, rgba(246, 245, 249, 0.66) 42%, rgba(236, 235, 241, 0.5) 82%); animation: ix-fadeIn 0.6s ease-out 0s both; }
+.ix-vig { background: radial-gradient(85% 85% at 50% 50%, transparent 60%, rgba(40, 38, 60, 0.14) 100%); }
+.ix-amb { background: radial-gradient(34% 48% at 47% 50%, rgba(96, 52, 220, 0.12) 0%, transparent 72%), radial-gradient(30% 40% at 12% 30%, rgba(60, 40, 140, 0.06) 0%, transparent 70%); animation: ix-fadeIn 1.1s ease-out 0.2s both; }
+
+/* faint network nodes + twinkling particles */
+.ix-net { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; overflow: visible; }
+.ix-nodes { animation: ix-fade35 0.7s ease-out 0.05s both, ix-nodesDown 0.8s ease-out 3.4s forwards; }
+.ix-nd { fill: #6f63e8; }
+.ix-nh { fill: rgba(120, 100, 255, 0.14); }
+.ix-ptw { animation: ix-fadeIn 0.8s ease-out 0.08s both; }
+.ix-pt { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #6f63e8; box-shadow: 0 0 6px rgba(111, 99, 232, 0.6); }
+.ix-v1 { animation: ix-tw 3.4s ease-in-out infinite, ix-dr1 11s ease-in-out infinite alternate; }
+.ix-v2 { animation: ix-tw 4.2s ease-in-out 0.8s infinite, ix-dr2 13s ease-in-out infinite alternate; }
+.ix-v3 { animation: ix-tw 3.8s ease-in-out 1.6s infinite, ix-dr3 9s ease-in-out infinite alternate; }
+
+/* ---------- scene 1–2: initialization + energy ---------- */
+.ix-core { position: absolute; left: 717px; top: 394px; width: 6px; height: 6px; border-radius: 50%; background: #eef3ff; box-shadow: 0 0 10px 2px rgba(150, 175, 255, 0.95), 0 0 44px 10px rgba(110, 90, 255, 0.35); animation: ix-core 1.06s linear 0s both; }
+.ix-cring { position: absolute; left: 640px; top: 317px; width: 160px; height: 160px; border-radius: 50%; border: 1px solid rgba(150, 170, 255, 0.45); box-sizing: border-box; }
+.ix-cr1 { animation: ix-ringOut 0.8s cubic-bezier(0.2, 0.6, 0.3, 1) 0.32s both; }
+.ix-cr2 { animation: ix-ringIn 0.3s cubic-bezier(0.6, 0, 0.9, 0.5) 0.66s both; }
+.ix-at { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #dfe6ff; box-shadow: 0 0 6px #8aa2ff; animation: ix-attract 0.6s cubic-bezier(0.55, 0, 0.8, 0.45) both; }
+.ix-energy { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; overflow: visible; filter: drop-shadow(0 0 3px rgba(110, 140, 255, 0.9)); animation: ix-out 0.18s linear 0.86s forwards; }
+.ix-eb { fill: none; stroke: rgba(90, 90, 220, 0.3); stroke-width: 1; stroke-dasharray: 100; animation: ix-baseDraw 0.52s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.ix-ec { fill: none; stroke: #6b5cff; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 12 200; animation: ix-comet 0.5s cubic-bezier(0.5, 0, 0.25, 1) both; }
+.ix-ec2 { stroke: #9a5cff; }
+.ix-efg { animation: ix-grpFlow 0.42s linear 0.48s both; }
+.ix-ef { fill: none; stroke: rgba(110, 120, 255, 0.16); stroke-width: 1; }
+.ix-ed { fill: none; stroke: #7a86ff; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0.1 3.4; animation: ix-flow 0.42s linear infinite; }
+.ix-nf { fill: #6b5cff; transform-box: fill-box; transform-origin: center; animation: ix-nflash 0.55s ease-out both; }
+
+/* ---------- scene 3–4: crystalline assembly + charge ---------- */
+.ix-lglow { position: absolute; left: 400px; top: 77px; width: 640px; height: 640px; border-radius: 50%; background: radial-gradient(circle, rgba(92, 70, 255, 0.24) 0%, rgba(70, 60, 220, 0.08) 40%, transparent 68%); animation: ix-glowIn 0.6s ease-out 1.72s both, ix-out 0.6s ease-in 3.6s forwards; }
+.ix-bloom { position: absolute; left: 220px; top: -103px; width: 1000px; height: 1000px; border-radius: 50%; background: radial-gradient(circle, rgba(125, 95, 255, 0.4) 0%, rgba(80, 70, 235, 0.15) 34%, transparent 64%); animation: ix-bloom 1.25s cubic-bezier(0.3, 0.1, 0.2, 1) 3.55s both; }
+.ix-pring { position: absolute; left: 560px; top: 237px; width: 320px; height: 320px; border-radius: 50%; border: 1px solid rgba(175, 155, 255, 0.6); box-shadow: 0 0 28px rgba(120, 90, 255, 0.35), inset 0 0 28px rgba(120, 90, 255, 0.25); box-sizing: border-box; animation: ix-ringP 0.95s cubic-bezier(0.2, 0.6, 0.3, 1) 2.02s both; }
+.ix-stage { position: absolute; left: 410px; top: 130px; width: 620px; height: 620px; }
+.ix-symw { position: absolute; inset: 0; will-change: transform; } /* own layer before the flight starts */
+.ix-floaty { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 310px 267px; }
+.ix-halo { clip-path: inset(0 0 25% 0); animation: ix-fadeIn 0.24s ease-out 1.7s both; }
+.ix-pc { will-change: transform, opacity, filter; }
+.ix-cUL { clip-path: polygon(31.58% 23.92%, 49.84% 12.6%, 49.84% 34.45%, 31.58% 44.1%); transform-origin: 40.7% 28.8%; animation: ix-pUL 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 0.9s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-cUR { clip-path: polygon(49.84% 12.6%, 69.22% 23.84%, 68.9% 24.4%, 49.84% 34.93%); transform-origin: 57% 24%; animation: ix-pUR 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 0.99s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-cML { clip-path: polygon(31.74% 44.02%, 46.49% 36.2%, 46.49% 52.87%); transform-origin: 41.5% 44.4%; animation: ix-pML 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 1.08s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-cMR { clip-path: polygon(53.75% 33.17%, 68.74% 41.71%, 53.75% 50.16%); transform-origin: 58.7% 41.7%; animation: ix-pMR 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 1.16s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-cLL { clip-path: polygon(31.02% 62.68%, 49.84% 51.83%, 49.84% 73.6%); transform-origin: 43.6% 62.7%; animation: ix-pLL 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 1.24s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-cLR { clip-path: polygon(49.84% 52.39%, 68.74% 41.71%, 68.74% 63%, 49.84% 73.68%); transform-origin: 59.3% 57.7%; animation: ix-pLR 0.4s cubic-bezier(0.2, 1.12, 0.34, 1) 1.3s both, ix-out 0.22s linear 1.92s forwards; }
+.ix-edges { position: absolute; left: 0; top: 0; width: 620px; height: 620px; overflow: visible; filter: drop-shadow(0 0 5px rgba(140, 110, 255, 0.95)); }
+.ix-ee { fill: none; stroke: url(#ix-egr); stroke-width: 4; stroke-linejoin: round; stroke-dasharray: 100; animation: ix-edge 0.6s cubic-bezier(0.3, 0, 0.2, 1) both; }
+.ix-sweep { position: absolute; inset: 0; overflow: hidden; clip-path: inset(0 0 25% 0); -webkit-mask-image: url("/brand/intro-logo.webp"); mask-image: url("/brand/intro-logo.webp"); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; mix-blend-mode: screen; }
+.ix-band { position: absolute; left: 0; top: -30%; width: 190px; height: 160%; background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%); animation: ix-band 0.44s cubic-bezier(0.45, 0, 0.25, 1) 1.78s both; }
+
+/* ---------- scene 5: wordmark + status ---------- */
+.ix-wmw { position: absolute; inset: 0; will-change: transform; }
+.ix-word { position: absolute; left: 0; right: 0; top: 478px; width: max-content; margin: 0 auto; font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: 0.32em; color: #0b0b0c; white-space: nowrap; }
+.ix-lt { display: inline-block; animation: ix-wm 0.64s cubic-bezier(0.16, 1, 0.3, 1) 2.1s both; }
+.ix-fhaze { position: absolute; left: 40px; top: 478px; width: 540px; height: 150px; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(96, 70, 255, 0.2) 0%, transparent 100%); animation: ix-fadeIn 0.6s ease-out 2.2s both, ix-out 0.4s ease-in 3.5s forwards; }
+.ix-fline { position: absolute; left: 90px; top: 545px; width: 440px; height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(140, 130, 255, 0.75) 50%, transparent 100%); animation: ix-lineIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 2.22s both, ix-out 0.35s ease-in 3.5s forwards; }
+.ix-fspark { position: absolute; left: 90px; top: 544px; width: 70px; height: 3px; border-radius: 2px; background: radial-gradient(50% 50% at 50% 50%, rgba(225, 215, 255, 0.95) 0%, transparent 100%); animation: ix-spark 0.7s cubic-bezier(0.45, 0, 0.3, 1) 2.34s both; }
+.ix-st { position: absolute; left: 0; top: 574px; width: 620px; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.28em; color: rgba(58, 48, 150, 0.85); animation: ix-status 0.95s ease-out 2.72s both; }
+.ix-ic { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.ix-skip {
+  position: fixed; right: 24px; bottom: 20px; z-index: 101; height: 40px; padding: 0 16px; display: flex; align-items: center; gap: 8px;
+  border-radius: 999px; border: 1px solid rgba(11, 11, 12, 0.12); background: rgba(255, 255, 255, 0.7); color: #3d3f46;
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; cursor: pointer;
+  animation: ix-fadeIn 0.4s ease-out 0.4s both; transition: background 0.2s, color 0.2s, opacity 0.4s;
+}
+.ix-skip:hover { background: #fff; color: #0b0b0c; }
+.ix-handoff .ix-skip { opacity: 0; pointer-events: none; }
+
+@keyframes ix-fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ix-out { to { opacity: 0 } }
+@keyframes ix-fade35 { from { opacity: 0 } to { opacity: 0.35 } }
+@keyframes ix-nodesDown { from { opacity: 0.35 } to { opacity: 0.12 } }
+@keyframes ix-tw { 0%, 100% { opacity: 0.25 } 50% { opacity: 1 } }
+@keyframes ix-dr1 { to { transform: translate(14px, -10px) } }
+@keyframes ix-dr2 { to { transform: translate(-12px, 8px) } }
+@keyframes ix-dr3 { to { transform: translate(8px, 14px) } }
+@keyframes ix-core { 0% { opacity: 0; transform: scale(0.2) } 17% { opacity: 0; transform: scale(0.2) } 27% { opacity: 1; transform: scale(1) } 38% { transform: scale(1.7) } 50% { transform: scale(1) } 74% { opacity: 1; transform: scale(1.15) } 86% { opacity: 1; transform: scale(2.8) } 100% { opacity: 0; transform: scale(0) } }
+@keyframes ix-ringOut { 0% { opacity: 0; transform: scale(0.05) } 15% { opacity: 0.6 } 100% { opacity: 0; transform: scale(1) } }
+@keyframes ix-ringIn { 0% { opacity: 0; transform: scale(1.7) } 40% { opacity: 0.5 } 100% { opacity: 0; transform: scale(0.04) } }
+@keyframes ix-attract { 0% { opacity: 0; transform: translate(0, 0) } 25% { opacity: 0.9 } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) } }
+@keyframes ix-baseDraw { 0% { stroke-dashoffset: 100; opacity: 0 } 15% { opacity: 1 } 75% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0.6 } }
+@keyframes ix-comet { 0% { stroke-dashoffset: 12; opacity: 0 } 8% { opacity: 1 } 90% { opacity: 1 } 100% { stroke-dashoffset: -88; opacity: 0 } }
+@keyframes ix-grpFlow { 0% { opacity: 0 } 25% { opacity: 1 } 75% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes ix-flow { to { stroke-dashoffset: -7 } }
+@keyframes ix-nflash { 0% { opacity: 0; transform: scale(0.3) } 30% { opacity: 1; transform: scale(1.5) } 100% { opacity: 0; transform: scale(1) } }
+@keyframes ix-pUL { 0% { opacity: 0; transform: translate3d(-70px, 6px, 0) rotateY(28deg) rotateZ(-6deg) scale(0.94); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-pUR { 0% { opacity: 0; transform: translate3d(46px, -56px, 0) rotateX(24deg) rotateZ(7deg) scale(0.94); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-pML { 0% { opacity: 0; transform: translate3d(-8px, 70px, 0) rotateX(-40deg) scale(0.95); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-pMR { 0% { opacity: 0; transform: translate3d(8px, 76px, 0) rotateY(-34deg) scale(0.95); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-pLL { 0% { opacity: 0; transform: translate3d(-24px, 78px, 0) rotateX(-18deg) rotateZ(-7deg) scale(0.94); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-pLR { 0% { opacity: 0; transform: translate3d(66px, 44px, 0) rotateY(-20deg) rotateZ(8deg) scale(0.94); filter: blur(8px) brightness(1.6) } 55% { opacity: 1; filter: blur(0) brightness(1.25) } 100% { opacity: 1; transform: none; filter: none } }
+@keyframes ix-edge { 0% { stroke-dashoffset: 100; opacity: 0 } 12% { opacity: 1 } 55% { stroke-dashoffset: 0; opacity: 0.95 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes ix-band { 0% { opacity: 0; color: #4d8dff; transform: translateX(-260px) rotate(18deg) } 15% { opacity: 1 } 50% { color: #8a6cff } 85% { opacity: 1 } 100% { opacity: 0; color: #c66dff; transform: translateX(700px) rotate(18deg) } }
+@keyframes ix-glowIn { from { opacity: 0; transform: scale(0.8) } to { opacity: 1; transform: scale(1) } }
+@keyframes ix-ringP { 0% { opacity: 0; transform: scale(0.45) } 12% { opacity: 0.75 } 100% { opacity: 0; transform: scale(2) } }
+@keyframes ix-bloom { 0% { opacity: 0; transform: scale(0.25) } 30% { opacity: 1; transform: scale(1) } 100% { opacity: 0; transform: scale(3.4) } }
+@keyframes ix-wm { 0% { opacity: 0; transform: translate(var(--dx), 8px); filter: blur(5px) } 50% { opacity: 1; filter: blur(0) } 100% { opacity: 1; transform: translate(0, 0); filter: blur(0) } }
+@keyframes ix-lineIn { from { opacity: 0; transform: scaleX(0) } to { opacity: 1; transform: scaleX(1) } }
+@keyframes ix-spark { 0% { opacity: 0; transform: translateX(0) } 20% { opacity: 1 } 80% { opacity: 1 } 100% { opacity: 0; transform: translateX(370px) } }
+@keyframes ix-status { 0% { opacity: 0; transform: translateY(4px) } 22% { opacity: 1; transform: none } 72% { opacity: 1 } 100% { opacity: 0 } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-overlay { display: none !important; }
+  [data-intro-target], .intro-content, .intro-fade { opacity: 1 !important; transform: none !important; filter: none !important; }
+}

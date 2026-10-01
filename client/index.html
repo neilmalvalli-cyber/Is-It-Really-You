@@ -8,6 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" />
+    <script>
+      /* Logo intro boot (ported from Provenrely lib/intro-boot.ts): runs before first paint; once per session;
+         ?intro=1 replays; reduced-motion users skip it; failsafe releases the page. */
+      (function(){try{var d=document.documentElement;var force=/[?&]intro=1/.test(location.search);if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(!force&&sessionStorage.getItem('really-you:intro-seen'))return;d.style.setProperty('--ix-s',String(Math.min(innerHeight/900,innerWidth/760,1.2)));d.setAttribute('data-intro','playing');setTimeout(function(){var o=document.querySelector('.ix-overlay');if(o)o.classList.add('ix-run')},2500);setTimeout(function(){var s=d.getAttribute('data-intro');if(s==='playing'||s==='revealing'){d.setAttribute('data-intro','done');var o=document.querySelector('.ix-overlay');if(o)o.remove()}},9000)}catch(e){}})();
+    </script>
     <title>Really You</title>
   </head>
   <body>

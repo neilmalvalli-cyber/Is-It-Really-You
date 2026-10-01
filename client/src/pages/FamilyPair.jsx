@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { encodePairing } from '../lib/pairing.js';
+import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 // Shows the PUBLIC pairing code (deviceId, name, relation, X). Back never touches the key;
 // Reset is a separate, clearly destructive action at the bottom.
@@ -24,7 +25,7 @@ export default function FamilyPair({ profile, deviceId, onBack, onReset }) {
 
   return (
     <main className="screen wide">
-      <button type="button" className="back" onClick={onBack}>← Back</button>
+      <button type="button" className="back" onClick={onBack}><Icon name="arrowLeft" /> Back</button>
       <span className="eyebrow">Really You</span>
       <h1>Pair this device</h1>
       <div className="card pair-grid">
@@ -38,7 +39,7 @@ export default function FamilyPair({ profile, deviceId, onBack, onReset }) {
           <details>
             <summary>Can't scan? Use the pairing code</summary>
             <textarea className="code" readOnly value={code} rows={4} onFocus={(e) => e.target.select()} />
-            <button type="button" className="big secondary" onClick={copy}>{copied ? '✅ Copied' : 'Copy code'}</button>
+            <button type="button" className="big secondary" onClick={copy}><Icon name={copied ? 'check' : 'copy'} /> {copied ? 'Copied' : 'Copy code'}</button>
           </details>
         </div>
       </div>

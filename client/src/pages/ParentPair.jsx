@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { decodePairing } from '../lib/pairing.js';
+import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 // X is trusted only from this in-person scan / paste (security rule 4) — never from the server.
 export default function ParentPair({ onPaired, onCancel }) {
@@ -34,12 +35,12 @@ export default function ParentPair({ onPaired, onCancel }) {
 
   return (
     <main className="screen">
-      <button type="button" className="back" onClick={onCancel}>← Back</button>
-      <h1>➕ Add family member</h1>
-      <p>Point the camera at the QR code on your family member's screen.</p>
+      <button type="button" className="back" onClick={onCancel}><Icon name="arrowLeft" /> Back</button>
+      <h1>Add family member</h1>
+      <p className="lead">Point the camera at the QR code on your family member's screen.</p>
       <div id="qr-reader" className="reader" />
-      {camError && <div className="banner yellow">⚠️ {camError}</div>}
-      {error && <div className="banner red" role="alert">⛔ {error}</div>}
+      {camError && <Banner tone="yellow">{camError}</Banner>}
+      {error && <Banner tone="red" alert>{error}</Banner>}
       <details open={!!camError}>
         <summary>Paste a pairing code instead</summary>
         <textarea className="code" value={paste} onChange={(e) => setPaste(e.target.value)} rows={4} placeholder="IIRY1.…" />

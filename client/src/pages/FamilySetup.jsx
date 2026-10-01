@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RELATIONS, cleanName } from '../lib/pairing.js';
 import { createFamilySecret, isValidPin } from '../lib/secretStore.js';
+import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 export default function FamilySetup({ onDone, onBack }) {
   const [name, setName] = useState('');
@@ -33,7 +34,7 @@ export default function FamilySetup({ onDone, onBack }) {
 
   return (
     <form className="screen" onSubmit={submit}>
-      <button type="button" className="back" onClick={onBack}>← Back</button>
+      <button type="button" className="back" onClick={onBack}><Icon name="arrowLeft" /> Back</button>
       <span className="eyebrow">Family member setup</span>
       <h1>Create your secure key</h1>
       <label>Your name
@@ -50,8 +51,8 @@ export default function FamilySetup({ onDone, onBack }) {
       <label>Type the PIN again
         <input {...pinProps} value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, ''))} />
       </label>
-      {error && <div className="banner red" role="alert">⛔ {error}</div>}
-      <button className="big" disabled={busy}>{busy ? '⏳ Creating secure key…' : 'Create my key'}</button>
+      {error && <Banner tone="red" alert>{error}</Banner>}
+      <button className="big" disabled={busy}>{busy ? 'Creating secure key…' : 'Create my key'}</button>
       <p className="small">Your secret key is created on this device, locked with your PIN, and never leaves it.</p>
     </form>
   );

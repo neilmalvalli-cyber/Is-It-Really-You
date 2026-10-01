@@ -11,11 +11,13 @@ import ParentPair from './pages/ParentPair.jsx';
 import WhoIsCalling from './pages/WhoIsCalling.jsx';
 import VerifyWait from './pages/VerifyWait.jsx';
 import CallCheck from './pages/CallCheck.jsx';
-import { getDeviceId, getSetting, setSetting, getFamilyMembers, addFamilyMember } from './lib/storage.js';
+import { getDeviceId, getSetting, setSetting, getFamilyMembers, addFamilyMember, removeFamilyMember } from './lib/storage.js';
 import { getFamilyPublicKey, clearFamilySecret, unlockFamilySecret } from './lib/secretStore.js';
 import { connectSocket, send } from './lib/socket.js';
 import { createParentSession, createFamilySession, isValidRequest, SESSION_MS } from './lib/verifySession.js';
 import { speak } from './lib/speak.js';
+import { Banner } from './components/Icon.jsx';
+import Intro from './components/Intro.jsx';
 
 
 export default function App() {
@@ -130,7 +132,7 @@ export default function App() {
     return (
       <main className="screen">
         <h1>Really You</h1>
-        <div className="banner yellow">⚠️ Not a secure (HTTPS) page. Microphone and crypto will not work. Open the https:// tunnel link.</div>
+        <Banner tone="yellow">Not a secure (HTTPS) page. Microphone and crypto will not work. Open the https:// tunnel link.</Banner>
       </main>
     );
   }
@@ -181,6 +183,7 @@ export default function App() {
         onAdd={() => { setToast(''); setScreen('pair'); }}
         onCheckCall={() => { setToast(''); setScreen('call'); }}
         onDemo={() => { setToast(''); setScreen('demo'); }}
+        onRemove={async (m) => { setMembers(await removeFamilyMember(m.deviceId)); setToast(`Removed ${m.name}.`); }}
         onChangeRole={() => pickRole(undefined)}
       />
     );
@@ -188,10 +191,11 @@ export default function App() {
 
   return (
     <div className={`app-root ${role === 'family' ? 'is-family' : ''}`}>
+      <Intro />
       <div className="marble-background" aria-hidden="true" />
       <div className="glass-shell">
         <Header status={status} role={role} />
-        {toast && screen === 'home' && role === 'parent' && <div className="banner green toast">✅ {toast}</div>}
+        {toast && screen === 'home' && role === 'parent' && <div className="toast"><Banner tone="green">{toast}</Banner></div>}
         {page}
       </div>
     </div>

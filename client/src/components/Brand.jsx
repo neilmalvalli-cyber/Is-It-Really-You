@@ -1,3 +1,4 @@
+import Icon from './Icon.jsx';
 // Brand mark ported from Provenrely (public/brand/mark-160-solid.webp, 113x160 artwork, no text inside it).
 // The wordmark is plain text, as in Provenrely's Logo.tsx, so it reads "REALLY YOU" here.
 export function LogoMark({ size = 32 }) {
@@ -41,7 +42,7 @@ export function Steps({ steps }) {
     <ol className="steps">
       {steps.map(([state, label]) => (
         <li key={label} className={`step ${state}`}>
-          <span className="step-mark" aria-hidden="true">{state === 'done' ? '✓' : state === 'active' ? '' : '○'}</span>
+          <span className="step-mark" aria-hidden="true">{state === 'done' ? <Icon name="check" /> : null}</span>
           <span>{label}</span>
           <span className="sr-only">{state === 'done' ? ' (done)' : state === 'active' ? ' (in progress)' : ' (waiting)'}</span>
         </li>

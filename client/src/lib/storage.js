@@ -38,3 +38,11 @@ export async function addFamilyMember(member) {
   await set('familyMembers', list);
   return list;
 }
+
+// Parent removes a paired family member: their public key X is deleted from this phone, so that device can
+// no longer produce a proof this phone accepts. Pairing again requires a new in-person QR scan.
+export async function removeFamilyMember(deviceId) {
+  const list = (await getFamilyMembers()).filter((m) => m.deviceId !== deviceId);
+  await set('familyMembers', list);
+  return list;
+}

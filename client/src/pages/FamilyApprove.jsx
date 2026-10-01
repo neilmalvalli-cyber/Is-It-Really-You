@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Countdown from '../components/Countdown.jsx';
 import { Steps } from '../components/Brand.jsx';
+import Icon, { Banner, Avatar } from '../components/Icon.jsx';
 
 const FAIL_TEXT = {
   timeout: 'The request expired before it was finished.',
@@ -33,12 +34,12 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   if (f.state === 'pending' && step === 'ask') {
     return (
       <main className="screen">
-        <button type="button" className="back" onClick={onClose}>← Back</button>
-        <span className="eyebrow">Incoming verification</span>
-        <h1>📞 {f.parentName} is asking you to verify</h1>
+        <button type="button" className="back" onClick={onClose}><Icon name="arrowLeft" /> Back</button>
+        <span className="eyebrow"><Icon name="phone" /> Incoming verification</span>
+        <h1>{f.parentName} is asking you to verify</h1>
         <p className="lead">They need you to confirm it's really you calling them right now.</p>
-        <button className="big" onClick={() => setStep('pin')}>✓ VERIFY — it's me</button>
-        <button className="big stop" onClick={onDeny}>✕ THAT'S NOT ME</button>
+        <button className="big" onClick={() => setStep('pin')}><Icon name="shieldCheck" /> Verify — it's me</button>
+        <button className="big stop" onClick={onDeny}><Icon name="x" /> That's not me</button>
         <Countdown until={f.expiresAt} />
       </main>
     );
@@ -47,12 +48,12 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   if (f.state === 'pending') {
     return (
       <form className="screen" onSubmit={approve}>
-        <button type="button" className="back" onClick={() => { setPin(''); setError(''); setStep('ask'); }}>← Back</button>
+        <button type="button" className="back" onClick={() => { setPin(''); setError(''); setStep('ask'); }}><Icon name="arrowLeft" /> Back</button>
         <h1>Enter your PIN</h1>
         <p className="lead">Enter your 6-digit PIN to verify.</p>
         <input className="pin" type="password" inputMode="numeric" autoComplete="off" maxLength={6} autoFocus aria-label="6-digit PIN"
           value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} />
-        {error && <div className="banner red" role="alert">⛔ {error}</div>}
+        {error && <Banner tone="red" alert>{error}</Banner>}
         <button className="big" disabled={busy || pin.length !== 6}>{busy ? 'Checking PIN…' : 'Continue'}</button>
         <Countdown until={f.expiresAt} />
       </form>
@@ -75,8 +76,8 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   if (f.state === 'done') {
     return (
       <main className="screen">
-        <button type="button" className="back" onClick={onClose}>← Back</button>
-        <span className="eyebrow">✓ Verified on your device</span>
+        <button type="button" className="back" onClick={onClose}><Icon name="arrowLeft" /> Back</button>
+        <span className="eyebrow">Verified on your device</span>
         <h1>Your verification words</h1>
         <p className="lead">Tell these two words to {f.parentName}.</p>
         <div className="words">
@@ -91,8 +92,8 @@ export default function FamilyApprove({ f, onApprove, onDeny, onClose }) {
   const denied = f.state === 'denied';
   return (
     <main className={`screen result ${denied ? 'red' : 'yellow'}`}>
-      <button type="button" className="back" onClick={onClose}>← Back</button>
-      <div className="result-badge" aria-hidden="true">{denied ? '✕' : '!'}</div>
+      <button type="button" className="back" onClick={onClose}><Icon name="arrowLeft" /> Back</button>
+      <div className="result-badge"><Icon name={denied ? 'x' : 'alert'} /></div>
       <h1>{denied ? "You said it's not you" : 'Could not verify'}</h1>
       <p className="lead">{denied ? `${f.parentName} has been told: do not pay.` : (FAIL_TEXT[f.reason] || 'Ask them to try again.')}</p>
       <button className="big secondary" onClick={onClose}>Close</button>
