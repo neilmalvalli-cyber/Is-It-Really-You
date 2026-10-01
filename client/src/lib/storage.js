@@ -1,3 +1,5 @@
+import { get, set } from 'idb-keyval';
+
 // Small local settings (role, deviceId). Secrets go through secretStore.js, never here.
 const KEY = 'iiry';
 
@@ -22,4 +24,17 @@ export function getDeviceId() {
     setSetting('deviceId', id);
   }
   return id;
+}
+
+// Parent's paired family members: { deviceId, name, relation, X }. X came from the in-person QR scan (rule 4).
+
+export async function getFamilyMembers() {
+  return (await get('familyMembers')) || [];
+}
+
+export async function addFamilyMember(member) {
+  const list = (await getFamilyMembers()).filter((m) => m.deviceId !== member.deviceId);
+  list.push(member);
+  await set('familyMembers', list);
+  return list;
 }

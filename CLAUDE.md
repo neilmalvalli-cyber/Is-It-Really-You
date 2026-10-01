@@ -81,8 +81,8 @@ screen, no menus. Every warning also spoken (speechSynthesis, en-IN). Plain word
 ## Stack / layout
 Client: React + Vite, plain CSS, idb-keyval, qrcode, html5-qrcode, socket.io-client, @noble/curves, @noble/hashes.
 Server: Node + Express + Socket.io + multer(memory) + @google/genai.
-`client/src/pages`: RoleSelect, FamilySetup, ParentSetup, ParentHome, CallCheck, WhoIsCalling, VerifyWait, FamilyHome, FamilyApprove
-`client/src/lib`: zk.js, secretStore.js, storage.js, socket.js, audio.js, speak.js, words.js
+`client/src/pages`: RoleSelect, FamilySetup, ParentSetup, ParentHome, ParentPair, CallCheck, WhoIsCalling, VerifyWait, FamilyHome, FamilyApprove
+`client/src/lib`: zk.js, secretStore.js, pairing.js, storage.js, socket.js, audio.js, speak.js, words.js
 `server/`: index.js, gemini.js, .env · `demo-audio/`: clips
 
 ## Build plan (one milestone at a time; after each: phone + laptop test steps + commit message)
