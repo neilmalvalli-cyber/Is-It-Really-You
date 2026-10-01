@@ -1,18 +1,15 @@
-// "Really You" brand mark: a shield with a check (inline SVG, no image dependency).
-export function ShieldMark({ size = 28 }) {
+// Brand mark ported from Provenrely (public/brand/mark-160-solid.webp, 113x160 artwork, no text inside it).
+// The wordmark is plain text, as in Provenrely's Logo.tsx, so it reads "REALLY YOU" here.
+export function LogoMark({ size = 32 }) {
   return (
-    <svg className="shield-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <defs>
-        <linearGradient id="ry-shield" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#5aa9ff" />
-          <stop offset="1" stopColor="#8b6cff" />
-        </linearGradient>
-      </defs>
-      <path d="M16 2.5 4.5 7v8.2c0 7.1 4.8 12.6 11.5 14.3 6.7-1.7 11.5-7.2 11.5-14.3V7L16 2.5Z"
-        fill="rgba(90,169,255,0.14)" stroke="url(#ry-shield)" strokeWidth="2" strokeLinejoin="round" />
-      <path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="#e8f1ff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img className="logo-mark" src="/brand/mark-160-solid.webp" width={Math.round(size * 113 / 160)} height={size}
+      alt="" aria-hidden="true" draggable={false} decoding="async" />
   );
+}
+export const ShieldMark = LogoMark; // older name used by the pages
+
+export function Wordmark() {
+  return <span className="wordmark">Really You</span>;
 }
 
 const STATUS = {
@@ -28,7 +25,7 @@ export function Header({ status, role }) {
   const s = STATUS[status] || STATUS.connecting;
   return (
     <header className={`app-header ${role === 'family' ? 'wide' : ''}`}>
-      <div className="brand"><ShieldMark /> <span>Really You</span></div>
+      <div className="brand" aria-label="Really You"><LogoMark size={30} /><Wordmark /></div>
       {role && (
         <span className={`conn ${s.cls}`} role="status">
           <span className="dot" aria-hidden="true" />{s.text}

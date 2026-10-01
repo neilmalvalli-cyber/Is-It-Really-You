@@ -187,10 +187,13 @@ export default function App() {
   }
 
   return (
-    <>
-      <Header status={status} role={role} />
-      {toast && screen === 'home' && role === 'parent' && <div className="banner green toast">✅ {toast}</div>}
-      {page}
-    </>
+    <div className={`app-root ${role === 'family' ? 'is-family' : ''}`}>
+      <div className="marble-background" aria-hidden="true" />
+      <div className="glass-shell">
+        <Header status={status} role={role} />
+        {toast && screen === 'home' && role === 'parent' && <div className="banner green toast">✅ {toast}</div>}
+        {page}
+      </div>
+    </div>
   );
 }
