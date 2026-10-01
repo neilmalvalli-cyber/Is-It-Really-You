@@ -22,15 +22,22 @@ const STATUS = {
 };
 
 // Compact app header with brand + connection pill. Never shows socket or device ids.
-export function Header({ status, role }) {
+export function Header({ status, role, voiceOn, onToggleVoice }) {
   const s = STATUS[status] || STATUS.connecting;
   return (
     <header className={`app-header ${role === 'family' ? 'wide' : ''}`}>
       <div className="brand" aria-label="Really You"><LogoMark size={30} /><Wordmark /></div>
       {role && (
-        <span className={`conn ${s.cls}`} role="status">
-          <span className="dot" aria-hidden="true" />{s.text}
-        </span>
+        <div className="header-right">
+          <button type="button" className={`voice-toggle ${voiceOn ? 'on' : 'off'}`} onClick={onToggleVoice} aria-pressed={voiceOn}
+            aria-label={voiceOn ? 'Spoken warnings on. Tap to turn off' : 'Spoken warnings off. Tap to turn on'}
+            title={voiceOn ? 'Spoken warnings: on' : 'Spoken warnings: off'}>
+            <Icon name={voiceOn ? 'volumeOn' : 'volumeOff'} /><span className="voice-label">{voiceOn ? 'Voice on' : 'Voice off'}</span>
+          </button>
+          <span className={`conn ${s.cls}`} role="status">
+            <span className="dot" aria-hidden="true" />{s.text}
+          </span>
+        </div>
       )}
     </header>
   );

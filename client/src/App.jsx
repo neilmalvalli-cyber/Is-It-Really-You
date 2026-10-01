@@ -15,7 +15,7 @@ import { getDeviceId, getSetting, setSetting, getFamilyMembers, addFamilyMember,
 import { getFamilyPublicKey, clearFamilySecret, unlockFamilySecret } from './lib/secretStore.js';
 import { connectSocket, send } from './lib/socket.js';
 import { createParentSession, createFamilySession, isValidRequest, SESSION_MS } from './lib/verifySession.js';
-import { speak } from './lib/speak.js';
+import { speak, isVoiceOn, setVoiceOn } from './lib/speak.js';
 import { Banner } from './components/Icon.jsx';
 import Intro from './components/Intro.jsx';
 
@@ -29,6 +29,7 @@ export default function App() {
   const [members, setMembers] = useState([]);
   const [screen, setScreen] = useState('home');
   const [toast, setToast] = useState('');
+  const [voiceOn, setVoice] = useState(isVoiceOn);
   const [verify, setVerify] = useState(null); // parent: { member, sessionId, state, words, reason, expiresAt }
   const [famReq, setFamReq] = useState(null); // family: { parentName, sessionId, state, words, reason, expiresAt }
   const sessionRef = useRef(null); // the active parent or family session
@@ -194,7 +195,8 @@ export default function App() {
       <Intro />
       <div className="marble-background" aria-hidden="true" />
       <div className="glass-shell">
-        <Header status={status} role={role} />
+        <Header status={status} role={role} voiceOn={voiceOn}
+          onToggleVoice={() => { const on = !voiceOn; setVoiceOn(on); setVoice(on); if (on) speak('Spoken warnings on.'); }} />
         {toast && screen === 'home' && role === 'parent' && <div className="toast"><Banner tone="green">{toast}</Banner></div>}
         {page}
       </div>

@@ -1,6 +1,17 @@
-// Every warning/result is also spoken (UI rule). en-IN voice when available.
+import { getSetting, setSetting } from './storage.js';
+
+// Every warning/result is also spoken (UI rule), unless this device has turned spoken warnings off.
+export function isVoiceOn() {
+  return getSetting('voice') !== false; // on by default
+}
+
+export function setVoiceOn(on) {
+  setSetting('voice', on);
+  if (!on && 'speechSynthesis' in window) window.speechSynthesis.cancel(); // stop anything mid-sentence
+}
+
 export function speak(text) {
-  if (!('speechSynthesis' in window)) return;
+  if (!isVoiceOn() || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-IN';
