@@ -1,10 +1,12 @@
 // Express + Socket.io relay. The server never decides "verified" and never sees x, r or the PIN (rule 2).
 import express from 'express';
 import { createServer } from 'node:http';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Server } from 'socket.io';
+import multer from 'multer';
+import { checkAudio, ALLOWED_MIME, UNKNOWN } from './gemini.js';
 
 const ID_RE = /^[a-zA-Z0-9-]{8,64}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -32,18 +34,50 @@ export function isValidMessage(event, msg) {
   return keys.length === Object.keys(schema).length && keys.every((k) => schema[k] && schema[k](msg[k]));
 }
 
-export function createAppServer({ log = console.log } = {}) {
+const MAX_AUDIO = 2 * 1024 * 1024; // rule 11
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DEMO_DIR = path.join(ROOT, 'demo-audio');
+const DEMO_RE = /\.(webm|ogg|mp3|m4a|wav)$/i;
+
+export function createAppServer({ log = console.log, generate } = {}) {
   const app = express();
   const httpServer = createServer(app);
   const io = new Server(httpServer, { maxHttpBufferSize: 16 * 1024 });
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+  // Gemini scam check. Audio is kept in memory only (multer memoryStorage), never written to disk or logs (rule 10).
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_AUDIO, files: 1, fields: 0, parts: 1 },
+    fileFilter: (_req, file, cb) => cb(null, ALLOWED_MIME.includes(file.mimetype.split(';')[0])),
+  }).single('audio');
+
+  app.post('/api/scam-check', (req, res) => {
+    upload(req, res, async (err) => {
+      if (err) return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json(UNKNOWN);
+      const file = req.file;
+      if (!file || !file.buffer?.length) return res.status(400).json(UNKNOWN);
+      const verdict = await checkAudio(file.buffer, file.mimetype.split(';')[0], { generate });
+      file.buffer = null; // discard audio
+      log(`scam-check: ${verdict.risk}`);
+      res.json(verdict);
+    });
+  });
+
+  // Demo mode: pre-recorded clips the parent phone plays instead of the live mic.
+  app.get('/api/demo-clips', (_req, res) => {
+    let files = [];
+    try { files = readdirSync(DEMO_DIR).filter((f) => DEMO_RE.test(f)).sort(); } catch { /* no folder */ }
+    res.json(files);
+  });
+  app.use('/demo-audio', express.static(DEMO_DIR));
+
   // Production: serve the built client so one port (and one tunnel) serves everything.
-  const dist = path.join(path.dirname(fileURLToPath(import.meta.url)), '../client/dist');
+  const dist = path.join(ROOT, 'client/dist');
   if (existsSync(dist)) {
     app.use(express.static(dist));
-    app.get(/^(?!\/api|\/socket\.io).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')));
+    app.get(/^(?!\/api|\/socket\.io|\/demo-audio).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')));
   }
 
   io.on('connection', (socket) => {

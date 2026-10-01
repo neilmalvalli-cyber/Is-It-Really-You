@@ -8,6 +8,7 @@ import ParentHome from './pages/ParentHome.jsx';
 import ParentPair from './pages/ParentPair.jsx';
 import WhoIsCalling from './pages/WhoIsCalling.jsx';
 import VerifyWait from './pages/VerifyWait.jsx';
+import CallCheck from './pages/CallCheck.jsx';
 import { getDeviceId, getSetting, setSetting, getFamilyMembers, addFamilyMember } from './lib/storage.js';
 import { getFamilyPublicKey, clearFamilySecret, unlockFamilySecret } from './lib/secretStore.js';
 import { connectSocket, send } from './lib/socket.js';
@@ -158,6 +159,8 @@ export default function App() {
     page = <ParentSetup onDone={(n) => { setSetting('parentName', n); setParentName(n); }} />;
   } else if (screen === 'pair') {
     page = <ParentPair onPaired={onPaired} onCancel={() => setScreen('home')} />;
+  } else if (screen === 'call') {
+    page = <CallCheck onVerify={() => setScreen('who')} onExit={() => setScreen('home')} />;
   } else if (screen === 'who') {
     page = <WhoIsCalling members={members} onPick={startVerify} onCancel={() => setScreen('home')} />;
   } else if (screen === 'verify' && verify) {
@@ -176,6 +179,7 @@ export default function App() {
         parentName={parentName}
         members={members}
         onAdd={() => { setToast(''); setScreen('pair'); }}
+        onCheckCall={() => { setToast(''); setScreen('call'); }}
         onVerify={() => { setToast(''); setScreen('who'); }}
         onChangeRole={() => pickRole(undefined)}
       />

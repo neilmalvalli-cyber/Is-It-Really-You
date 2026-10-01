@@ -1,6 +1,6 @@
 const ICON = { son: '👨', daughter: '👩', grandson: '👦', granddaughter: '👧', other: '🧑' };
 
-export default function ParentHome({ parentName, members, onAdd, onVerify, onChangeRole }) {
+export default function ParentHome({ parentName, members, onAdd, onCheckCall, onVerify, onChangeRole }) {
   return (
     <main className="screen">
       <h1>👴 Hello, {parentName}</h1>
@@ -14,7 +14,8 @@ export default function ParentHome({ parentName, members, onAdd, onVerify, onCha
           </li>
         ))}
       </ul>
-      <button className="big" onClick={onVerify}>🔐 Verify a caller</button>
+      <button className="big" onClick={onCheckCall}>📞 CHECK THIS CALL</button>
+      <button className="big secondary" onClick={onVerify}>🔐 Verify a caller</button>
       <button className="big secondary" onClick={onAdd}>➕ Add family member</button>
       <button type="button" className="link" onClick={onChangeRole}>Change role</button>
     </main>

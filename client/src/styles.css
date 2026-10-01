@@ -64,3 +64,21 @@ button.member-btn { display: flex; align-items: center; justify-content: flex-st
 .result.yellow { background: var(--yellow); color: #111; }
 .result-icon { font-size: 5rem; }
 .screen.result { max-width: none; }
+.meter { border-radius: 20px; padding: 24px 16px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.meter.idle { background: #33475f; }
+.meter.green { background: var(--green); }
+.meter.yellow { background: var(--yellow); color: #111; }
+.meter.red { background: var(--red); }
+.meter-icon { font-size: 3.5rem; }
+.meter-word { font-size: 1.8rem; font-weight: 800; }
+.reason { font-size: 1.05rem; }
+.quote { font-style: italic; color: var(--muted); }
+.tactics { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.tactics li { background: #fff; color: #0b1f3a; border-radius: 999px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; }
+.demo { display: flex; flex-direction: column; gap: 12px; border-top: 2px dashed #33475f; padding-top: 12px; }
+.popup {
+  position: fixed; inset: 0; z-index: 50; background: var(--red); color: #fff; padding: 32px 16px;
+  display: flex; flex-direction: column; justify-content: center; gap: 20px; text-align: center;
+}
+.popup > * { max-width: 560px; width: 100%; margin: 0 auto; }
+.popup-text { font-size: 1.5rem; font-weight: 800; }
