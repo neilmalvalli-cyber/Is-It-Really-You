@@ -7,13 +7,14 @@ const FIXTURES = [
     match: /arrest|police|cbi/i,
     verdict: { risk: 'high', tactics: ['fake_authority', 'urgency', 'secrecy', 'money_request', 'emotional_pressure'] },
   },
-  {
-    match: /\bson\b|grandson|fake[-_ ]?(son|family)/i,
-    verdict: { risk: 'high', tactics: ['urgency', 'secrecy', 'money_request', 'new_number_excuse', 'emotional_pressure'] },
-  },
+  // Checked before the "son" rule so a safe clip named e.g. "safe-son" is LOW, not the fake-son fixture.
   {
     match: /safe|normal/i,
     verdict: { risk: 'low', tactics: [] },
+  },
+  {
+    match: /\bson\b|grandson|fake[-_ ]?(son|family)/i,
+    verdict: { risk: 'high', tactics: ['urgency', 'secrecy', 'money_request', 'new_number_excuse', 'emotional_pressure'] },
   },
 ];
 

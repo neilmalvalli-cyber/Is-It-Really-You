@@ -15,6 +15,12 @@ describe('Demo Mode fallback (bundled demo clips only)', () => {
     expect(demoFixtureFor('3-safe-call-from-family.wav').risk).toBe('low');
   });
 
+  it('a safe clip whose name also contains "son" is LOW (safe wins), fake son stays HIGH', () => {
+    for (const n of ['safe-son.mp3', 'safe son.m4a', '3-safe-son-call.wav', 'normal-son.mp3']) expect(demoFixtureFor(n).risk).toBe('low');
+    for (const n of ['fake-son.mp3', '1-fake-son-asks-for-money.mp3']) expect(demoFixtureFor(n).risk).toBe('high');
+    expect(demoFixtureFor('2-fake-police-digital-arrest.mp3').risk).toBe('high');
+  });
+
   it('maps the three bundled clips by name', () => {
     for (const n of ['1-fake-son.mp3', 'Fake son needs money urgently.mp3', 'fake_son.wav']) expect(demoFixtureFor(n).risk).toBe('high');
     for (const n of ['2-digital-arrest.mp3', 'Fake police digital arrest.m4a']) expect(demoFixtureFor(n).risk).toBe('high');
