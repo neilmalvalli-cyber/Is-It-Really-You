@@ -32,7 +32,9 @@ describe('Demo Mode fallback (bundled demo clips only)', () => {
     const v = withDemoFallback(UNKNOWN, '1-fake-son.mp3');
     expect(v.risk).toBe('high');
     expect(v.source).toBe('demo-fixture');
-    expect(v.reason).toMatch(/AI check is unavailable/);
+    expect(v.note).toMatch(/AI check was unavailable/); // labelled in code
+    expect(v.reason).toBe(''); // nothing extra on screen
+    expect(addVerdict(INITIAL_RISK, v).reasons).toEqual([]); // no explanation or tactic chips shown
     expect(addVerdict(INITIAL_RISK, v).level).toBe('red');
     expect(addVerdict(INITIAL_RISK, withDemoFallback(UNKNOWN, '3-safe-call.mp3')).level).toBe('green');
   });

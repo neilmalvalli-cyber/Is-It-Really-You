@@ -17,14 +17,16 @@ const FIXTURES = [
   },
 ];
 
-const NOTE = 'Demo recording: the AI check is unavailable right now, so the known result for this recording is shown.';
+// Kept in code/console only (not shown on screen — the presenter explains the fallback verbally).
+const NOTE = 'Demo recording: the AI check was unavailable, so the known result for this bundled recording is used.';
 
 /** Fixed verdict for a bundled demo clip file name, or null if the clip is not a known fixture. */
 export function demoFixtureFor(clipName) {
   if (typeof clipName !== 'string') return null;
   const name = clipName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
   const f = FIXTURES.find((x) => x.match.test(name));
-  return f ? { ...f.verdict, reason: NOTE, evidenceQuote: '', source: 'demo-fixture' } : null;
+  // Empty reason: the screen shows only the risk state, no AI-style explanation or tactic chips for a fixture.
+  return f ? { ...f.verdict, reason: '', evidenceQuote: '', source: 'demo-fixture', note: NOTE } : null;
 }
 
 /** Keep Gemini's verdict unless it failed (risk 'unknown') AND this is a known bundled demo clip. */
