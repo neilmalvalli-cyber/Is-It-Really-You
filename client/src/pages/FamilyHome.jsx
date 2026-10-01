@@ -1,38 +1,23 @@
-import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
-import { encodePairing } from '../lib/pairing.js';
+import { ShieldMark } from '../components/Brand.jsx';
 
-export default function FamilyHome({ profile, deviceId, onReset }) {
-  const [qr, setQr] = useState('');
-  const [copied, setCopied] = useState(false);
-  const code = encodePairing({ deviceId, name: profile.name, relation: profile.relation, X: profile.X });
-
-  useEffect(() => {
-    QRCode.toDataURL(code, { errorCorrectionLevel: 'M', margin: 2, width: 360 }).then(setQr);
-  }, [code]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
+// Family dashboard. Pairing (QR) lives on its own screen with a normal Back button.
+export default function FamilyHome({ profile, onPair }) {
   return (
-    <main className="screen">
-      <h1>🧑 {profile.name}</h1>
-      <p>Ready. Requests from your parent will appear here.</p>
-      <h2>Pair with your parent's phone</h2>
-      <p>Open "Add family member" on the parent phone and scan this code.</p>
-      {qr && <img className="qr" src={qr} alt="Pairing QR code" />}
-      <details>
-        <summary>Can't scan? Use the pairing code</summary>
-        <textarea className="code" readOnly value={code} rows={4} onFocus={(e) => e.target.select()} />
-        <button type="button" className="big secondary" onClick={copy}>{copied ? '✅ Copied' : 'Copy code'}</button>
-      </details>
-      <button type="button" className="link" onClick={onReset}>Reset this device</button>
+    <main className="screen wide">
+      <div className="family-grid">
+        <div className="hero">
+          <span className="eyebrow">Family member · {profile.relation}</span>
+          <h1><ShieldMark size={40} /> Really You</h1>
+          <p className="tagline"><strong>Help your family stay safe from scam calls.</strong></p>
+          <p className="lead">Hi {profile.name}. Keep this page open. When your parent asks to verify a call, it appears here
+            and you confirm with your PIN.</p>
+        </div>
+        <div className="card">
+          <h2>✅ Ready for verification requests</h2>
+          <p className="lead">Your secret key stays on this device, locked with your PIN. It is never sent anywhere.</p>
+          <button className="big" onClick={onPair}>📱 Pair with a parent's phone</button>
+        </div>
+      </div>
     </main>
   );
 }

@@ -1,6 +1,6 @@
-# Is It Really You?
+# Really You
 
-Hackathon app: Gemini warns about scam tactics on a call; an interactive Schnorr zero-knowledge proof decides whether the
+Hackathon project "Is It Really You?" — product name **Really You**.  Gemini warns about scam tactics on a call; an interactive Schnorr zero-knowledge proof decides whether the
 caller's family device is genuine. See `CLAUDE.md` for the brief. Needs Node 22.12+ (or 20.19+), required by Vite 8.
 
 ## Run (on Neil's laptop)

@@ -6,5 +6,5 @@ export default function Countdown({ until }) {
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
   }, []);
-  return <p className="small">⏱️ {Math.max(0, Math.ceil((until - now) / 1000))} seconds left</p>;
+  return <p className="countdown">⏱ {Math.max(0, Math.ceil((until - now) / 1000))} seconds left</p>;
 }

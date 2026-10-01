@@ -3,22 +3,35 @@ import { INITIAL_RISK, addVerdict } from '../lib/risk.js';
 import { listDemoClips, sendChunk, startDemoClip, startMic } from '../lib/audio.js';
 import { speak } from '../lib/speak.js';
 
-const METER = {
-  idle: { cls: 'idle', icon: '👂', word: 'Listening…', text: 'First check in about 15 seconds.' },
-  green: { cls: 'green', icon: '✅', word: 'No scam signs yet', text: 'Keep listening. Never share OTP or PIN.' },
-  yellow: { cls: 'yellow', icon: '⚠️', word: 'Be careful', text: 'Do not send money yet.' },
-  red: { cls: 'red', icon: '⛔', word: 'Possible scam', text: 'Do not send money. Verify first.' },
+// Plain-language risk states. Never shows HTTP codes, model names or JSON to the user.
+// Gemini only gives advice here — nothing on this screen can produce "Verified".
+function riskView(risk) {
+  if (risk.level === 'red') {
+    return { cls: 'red', icon: '⚠️', title: 'This may be a scam', lines: ['Do not send money.', 'Verify first.'] };
+  }
+  if (risk.level === 'yellow') {
+    return risk.medium > 0
+      ? { cls: 'yellow', icon: '⚠️', title: 'Be careful', lines: ['Some warning signs were heard.', 'Do not send money yet.'] }
+      : { cls: 'yellow', icon: '⚠️', title: "We couldn't fully check this call", lines: ['Do not send money yet.', 'You can still verify with your family member.'] };
+  }
+  if (risk.level === 'green') {
+    return { cls: 'green', icon: '✅', title: 'No common scam warning signs detected', lines: ['This does NOT guarantee safety.', 'If unsure, verify with your family member.'] };
+  }
+  return null;
+}
+const SPOKEN = {
+  red: 'This may be a scam. Do not send money. Verify first.',
+  yellow: 'Be careful. Do not send money yet.',
 };
-const SPOKEN = { yellow: 'Be careful. Do not send money yet.', red: 'This may be a scam. Do not send money. Verify first.' };
 const TACTIC_TEXT = {
   urgency: 'Hurry / urgency', secrecy: 'Asks for secrecy', money_request: 'Asks for money', fake_authority: 'Fake police / bank',
   new_number_excuse: 'New number excuse', emotional_pressure: 'Emotional pressure', otp_request: 'Asks for OTP / PIN',
   avoids_questions: 'Avoids questions',
 };
 
-export default function CallCheck({ onVerify, onExit }) {
+export default function CallCheck({ onVerify, onExit, initialMode = null }) {
   const [risk, setRisk] = useState(INITIAL_RISK);
-  const [mode, setMode] = useState(null); // null | 'pick' (demo clip list) | 'mic' | clip filename | 'ended'
+  const [mode, setMode] = useState(initialMode); // null | 'pick' (demo clip list) | 'mic' | clip filename | 'ended'
   const [clips, setClips] = useState(null); // null = loading, [] = none found, false = could not load
   const [pending, setPending] = useState(0);
   const [error, setError] = useState('');
@@ -70,7 +83,7 @@ export default function CallCheck({ onVerify, onExit }) {
       setMode(which === 'mic' ? null : 'pick');
       setError(which === 'mic'
         ? (err?.message === 'unsupported' ? 'This browser cannot record audio. Use Chrome.' : 'Microphone not allowed. Allow it in the browser and try again.')
-        : `Could not play clip (${err.message}).`);
+        : 'Could not play this recording. Try another one, or tap Refresh.');
     } finally {
       startingRef.current = false;
     }
@@ -88,21 +101,24 @@ export default function CallCheck({ onVerify, onExit }) {
     onVerify();
   }
 
-  const m = METER[risk.level];
+  const view = riskView(risk);
   const latest = risk.reasons.at(-1);
   const tactics = [...new Set(risk.reasons.flatMap((r) => r.tactics))];
+  const clipLabel = (c) => c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  const exit = () => { stop(); callIdRef.current += 1; onExit(); };
 
   if (!mode) {
     return (
       <main className="screen">
-        <h1>📞 Check this call</h1>
-        <p>Put the call on <strong>speaker</strong>, then tap the button.</p>
-        <button className="big" onClick={() => start('mic')}>🎙️ Start listening</button>
+        <button type="button" className="back" onClick={onExit}>← Back</button>
+        <h1>Check this call</h1>
+        <div className="card">
+          <p>1. Put the call on <strong>speaker</strong>.</p>
+          <p>2. Tap the button. We listen for scam tricks like hurry, secrecy or money requests.</p>
+        </div>
+        <button className="big main-action" onClick={() => start('mic')}>🎙 Start listening</button>
         {error && <div className="banner red" role="alert">⛔ {error}</div>}
-        <section className="demo">
-          <button className="big secondary" onClick={() => { setError(''); setMode('pick'); }}>🎬 Demo Mode (play a recorded clip)</button>
-        </section>
-        <button className="big secondary" onClick={onExit}>Back</button>
+        <button className="big ghost" onClick={() => { setError(''); setMode('pick'); }}>▶ Demo Mode</button>
       </main>
     );
   }
@@ -110,51 +126,67 @@ export default function CallCheck({ onVerify, onExit }) {
   if (mode === 'pick') {
     return (
       <main className="screen">
-        <h1>🎬 Demo Mode</h1>
-        <p>Pick a recorded call. It plays out loud and is checked by Gemini instead of the microphone.</p>
+        <button type="button" className="back" onClick={() => { setError(''); if (initialMode === 'pick') onExit(); else setMode(null); }}>← Back</button>
+        <span className="eyebrow">Demo Mode</span>
+        <h1>Play a recorded call</h1>
+        <p className="lead">The recording plays out loud and is checked by the same AI scam check as a real call.</p>
         {error && <div className="banner red" role="alert">⛔ {error}</div>}
-        {clips === null && <p>⏳ Loading clips…</p>}
-        {clips === false && <div className="banner yellow">⚠️ Could not load the clip list from the server.</div>}
+        {clips === null && <div className="checking"><span className="spinner" /> Loading recordings…</div>}
+        {clips === false && <div className="banner yellow">⚠️ Could not load the recordings from the server.</div>}
         {Array.isArray(clips) && clips.length === 0 && (
-          <div className="banner yellow">⚠️ No clips found. Put .mp3, .m4a, .wav, .ogg or .webm files in the <code>demo-audio/</code> folder next to the server, then tap Refresh.</div>
+          <div className="banner yellow">⚠️ No recordings found. Put .mp3, .m4a, .wav, .ogg or .webm files in the <code>demo-audio/</code> folder next to the server, then tap Refresh.</div>
         )}
         {Array.isArray(clips) && clips.map((c) => (
-          <button key={c} className="big" onClick={() => start(c)}>▶️ {c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}</button>
+          <button key={c} className="big" onClick={() => start(c)}>▶ {clipLabel(c)}</button>
         ))}
         <button className="big secondary" onClick={loadClips}>🔄 Refresh list</button>
-        <button className="big secondary" onClick={() => { setError(''); setMode(null); }}>Back</button>
       </main>
     );
   }
 
-  const clipLabel = (c) => c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  const listeningNow = mode !== 'ended';
+  const canVerify = risk.level !== 'idle';
 
   return (
     <main className="screen">
-      <p className="small">{running === 'mic' ? '🎙️ Listening to the microphone' : `🎬 Demo clip: ${clipLabel(running)}`}</p>
-      <div className={`meter ${m.cls}`} role="status">
-        <div className="meter-icon">{m.icon}</div>
-        <div className="meter-word">{m.word}</div>
-        <p>{m.text}</p>
-      </div>
+      <span className="source">{running === 'mic' ? '🎙 Microphone' : `▶ Demo: ${clipLabel(running)}`}</span>
+
+      {view ? (
+        <section className={`risk ${view.cls}`} role="status">
+          <div className="risk-head"><span className="risk-icon" aria-hidden="true">{view.icon}</span><h2>{view.title}</h2></div>
+          {view.lines.map((l) => <p key={l}>{view.cls === 'red' ? <strong>{l}</strong> : l}</p>)}
+        </section>
+      ) : (
+        <section className="card listening" role="status">
+          <div className={`wave ${listeningNow ? '' : 'paused'}`} aria-hidden="true"><span /><span /><span /><span /><span /></div>
+          <h2>{listeningNow ? 'Listening to the call…' : 'Stopped listening'}</h2>
+          <p className="lead">Recording a short sample to check for scam tactics.</p>
+        </section>
+      )}
+
       {latest && <p className="reason">💬 {latest.reason}</p>}
       {latest?.quote && <p className="quote">“{latest.quote}”</p>}
       {tactics.length > 0 && <ul className="tactics">{tactics.map((t) => <li key={t}>{TACTIC_TEXT[t] || t}</li>)}</ul>}
-      {pending > 0 && <p className="small">⏳ Checking…</p>}
-      {mode === 'ended'
-        ? <p className="small">Listening stopped.</p>
-        : <button className="big secondary" onClick={stop}>⏹️ Stop listening</button>}
-      {risk.level !== 'idle' && risk.level !== 'green' && <button className="big" onClick={verify}>🔐 VERIFY the caller</button>}
-      <button className="big secondary" onClick={() => { stop(); callIdRef.current += 1; onExit(); }}>Back</button>
+      {pending > 0 && <div className="checking"><span className="spinner" /> Checking the latest part of the call…</div>}
+
+      {canVerify && (
+        <button className={`big ${risk.level === 'green' ? 'secondary' : ''}`} onClick={verify}>
+          🔐 {risk.level === 'green' ? 'Verify with my family anyway' : 'VERIFY THIS CALL'}
+        </button>
+      )}
+      {listeningNow
+        ? <button className="big secondary" onClick={stop}>⏹ Stop</button>
+        : <p className="small">Listening stopped.</p>}
+      <button className="big ghost" onClick={exit}>Back to home</button>
 
       {risk.level === 'red' && !popupClosed && (
-        <div className="popup" role="alertdialog" aria-label="Possible scam">
-          <div className="result-icon">⛔</div>
+        <div className="popup" role="alertdialog" aria-label="This may be a scam">
+          <div className="result-badge" style={{ borderColor: 'var(--red)', background: 'var(--red-soft)' }}>⚠️</div>
           <h1>This may be a scam</h1>
           <p className="popup-text">Do not send money.<br />Verify first.</p>
-          {latest?.reason && <p>{latest.reason}</p>}
-          <button className="big" onClick={verify}>🔐 VERIFY</button>
-          <button className="big secondary" onClick={() => setPopupClosed(true)}>Close</button>
+          {latest?.reason && <p className="reason">💬 {latest.reason}</p>}
+          <button className="big" onClick={verify}>🔐 VERIFY THIS CALL</button>
+          <button className="big ghost" onClick={() => setPopupClosed(true)}>Close</button>
         </div>
       )}
     </main>

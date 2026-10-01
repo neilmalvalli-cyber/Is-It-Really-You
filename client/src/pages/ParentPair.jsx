@@ -34,6 +34,7 @@ export default function ParentPair({ onPaired, onCancel }) {
 
   return (
     <main className="screen">
+      <button type="button" className="back" onClick={onCancel}>← Back</button>
       <h1>➕ Add family member</h1>
       <p>Point the camera at the QR code on your family member's screen.</p>
       <div id="qr-reader" className="reader" />
@@ -44,7 +45,6 @@ export default function ParentPair({ onPaired, onCancel }) {
         <textarea className="code" value={paste} onChange={(e) => setPaste(e.target.value)} rows={4} placeholder="IIRY1.…" />
         <button type="button" className="big secondary" onClick={() => accept(paste)} disabled={!paste.trim()}>Pair</button>
       </details>
-      <button type="button" className="big secondary" onClick={onCancel}>Back</button>
     </main>
   );
 }

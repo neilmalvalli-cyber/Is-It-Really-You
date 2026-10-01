@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RELATIONS, cleanName } from '../lib/pairing.js';
 import { createFamilySecret, isValidPin } from '../lib/secretStore.js';
 
-export default function FamilySetup({ onDone }) {
+export default function FamilySetup({ onDone, onBack }) {
   const [name, setName] = useState('');
   const [relation, setRelation] = useState('son');
   const [pin, setPin] = useState('');
@@ -29,11 +29,13 @@ export default function FamilySetup({ onDone }) {
     }
   }
 
-  const pinProps = { type: 'password', inputMode: 'numeric', autoComplete: 'off', maxLength: 6, pattern: '\\d{6}' };
+  const pinProps = { className: 'pin', type: 'password', inputMode: 'numeric', autoComplete: 'off', maxLength: 6, pattern: '\\d{6}' };
 
   return (
     <form className="screen" onSubmit={submit}>
-      <h1>🧑 Family setup</h1>
+      <button type="button" className="back" onClick={onBack}>← Back</button>
+      <span className="eyebrow">Family member setup</span>
+      <h1>Create your secure key</h1>
       <label>Your name
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Ravi" />
       </label>

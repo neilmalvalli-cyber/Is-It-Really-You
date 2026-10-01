@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import RoleSelect from './pages/RoleSelect.jsx';
 import FamilySetup from './pages/FamilySetup.jsx';
 import FamilyHome from './pages/FamilyHome.jsx';
+import FamilyPair from './pages/FamilyPair.jsx';
+import { Header } from './components/Brand.jsx';
 import FamilyApprove from './pages/FamilyApprove.jsx';
 import ParentSetup from './pages/ParentSetup.jsx';
 import ParentHome from './pages/ParentHome.jsx';
@@ -15,13 +17,6 @@ import { connectSocket, send } from './lib/socket.js';
 import { createParentSession, createFamilySession, isValidRequest, SESSION_MS } from './lib/verifySession.js';
 import { speak } from './lib/speak.js';
 
-const STATUS_TEXT = {
-  connecting: '⏳ Connecting…',
-  connected: '✅ Connected',
-  offline: '⚠️ Disconnected — retrying…',
-  reconnecting: '🔄 Reconnecting…',
-  rejected: '⚠️ Server rejected device',
-};
 
 export default function App() {
   const [role, setRole] = useState(() => getSetting('role'));
@@ -102,6 +97,7 @@ export default function App() {
     await clearFamilySecret();
     setSetting('familyProfile', undefined);
     setFamilyProfile(null);
+    setScreen('home');
   }
 
   function startVerify(member) {
@@ -133,6 +129,7 @@ export default function App() {
   if (!window.isSecureContext) {
     return (
       <main className="screen">
+        <h1>Really You</h1>
         <div className="banner yellow">⚠️ Not a secure (HTTPS) page. Microphone and crypto will not work. Open the https:// tunnel link.</div>
       </main>
     );
@@ -140,10 +137,10 @@ export default function App() {
 
   let page;
   if (!role) page = <RoleSelect onPick={pickRole} />;
-  else if (!loaded) page = <main className="screen"><p>⏳ Loading…</p></main>;
+  else if (!loaded) page = <main className="screen"><div className="checking"><span className="spinner" /> Loading…</div></main>;
   else if (role === 'family') {
     if (!familyProfile) {
-      page = <FamilySetup onDone={(p) => { setSetting('familyProfile', { name: p.name, relation: p.relation }); setFamilyProfile(p); }} />;
+      page = <FamilySetup onBack={() => pickRole(undefined)} onDone={(p) => { setSetting('familyProfile', { name: p.name, relation: p.relation }); setFamilyProfile(p); }} />;
     } else if (famReq) {
       page = (
         <FamilyApprove
@@ -153,15 +150,17 @@ export default function App() {
           onClose={closeFamilyRequest}
         />
       );
+    } else if (screen === 'pair') {
+      page = <FamilyPair profile={familyProfile} deviceId={deviceId} onBack={() => setScreen('home')} onReset={resetFamily} />;
     } else {
-      page = <FamilyHome profile={familyProfile} deviceId={deviceId} onReset={resetFamily} />;
+      page = <FamilyHome profile={familyProfile} onPair={() => setScreen('pair')} />;
     }
   } else if (!parentName) {
-    page = <ParentSetup onDone={(n) => { setSetting('parentName', n); setParentName(n); }} />;
+    page = <ParentSetup onBack={() => pickRole(undefined)} onDone={(n) => { setSetting('parentName', n); setParentName(n); }} />;
   } else if (screen === 'pair') {
     page = <ParentPair onPaired={onPaired} onCancel={() => setScreen('home')} />;
-  } else if (screen === 'call') {
-    page = <CallCheck onVerify={() => setScreen('who')} onExit={() => setScreen('home')} />;
+  } else if (screen === 'call' || screen === 'demo') {
+    page = <CallCheck key={screen} initialMode={screen === 'demo' ? 'pick' : null} onVerify={() => setScreen('who')} onExit={() => setScreen('home')} />;
   } else if (screen === 'who') {
     page = <WhoIsCalling members={members} onPick={startVerify} onCancel={() => setScreen('home')} />;
   } else if (screen === 'verify' && verify) {
@@ -181,6 +180,7 @@ export default function App() {
         members={members}
         onAdd={() => { setToast(''); setScreen('pair'); }}
         onCheckCall={() => { setToast(''); setScreen('call'); }}
+        onDemo={() => { setToast(''); setScreen('demo'); }}
         onChangeRole={() => pickRole(undefined)}
       />
     );
@@ -188,7 +188,7 @@ export default function App() {
 
   return (
     <>
-      {role && <div className={`status ${status}`}>{STATUS_TEXT[status]}</div>}
+      <Header status={status} role={role} />
       {toast && screen === 'home' && role === 'parent' && <div className="banner green toast">✅ {toast}</div>}
       {page}
     </>
