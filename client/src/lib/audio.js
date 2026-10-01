@@ -53,13 +53,21 @@ export async function sendChunk(blob) {
 
 // Live mode: microphone listening to the call on speaker.
 export async function startMic(onChunk) {
+  if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) throw new Error('unsupported');
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const stopRec = recordChunks(stream, onChunk);
+  let stopRec;
+  try {
+    stopRec = recordChunks(stream, onChunk);
+  } catch (err) {
+    stream.getTracks().forEach((t) => t.stop()); // release the mic if the recorder cannot start
+    throw err;
+  }
   return () => { stopRec(); stream.getTracks().forEach((t) => t.stop()); };
 }
 
 // Demo mode: play a pre-recorded clip out loud AND record that same audio (no mic noise from the hall).
 export async function startDemoClip(url, onChunk, onEnded) {
+  if (!window.MediaRecorder) throw new Error('this browser cannot record audio');
   const audio = new Audio(url);
   audio.crossOrigin = 'anonymous';
   const ctx = new AudioContext();
@@ -77,8 +85,13 @@ export async function startDemoClip(url, onChunk, onEnded) {
     setTimeout(() => ctx.close(), 200);
   };
   audio.addEventListener('ended', () => { stop(); onEnded?.(); });
-  await ctx.resume();
-  await audio.play();
+  try {
+    await ctx.resume();
+    await audio.play();
+  } catch (err) {
+    stop(); // do not leave a recorder or audio context running
+    throw err;
+  }
   return stop;
 }
 

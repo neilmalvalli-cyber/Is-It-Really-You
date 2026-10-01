@@ -25,34 +25,54 @@ export default function CallCheck({ onVerify, onExit }) {
   const [popupClosed, setPopupClosed] = useState(false);
   const stopRef = useRef(null);
   const callIdRef = useRef(0);
+  const startingRef = useRef(false);
+  const [running, setRunning] = useState(''); // 'mic' or the demo clip file name
 
   const loadClips = () => { setClips(null); listDemoClips().then(setClips); };
-  useEffect(() => { loadClips(); return () => stopRef.current?.(); }, []);
+  useEffect(() => {
+    loadClips();
+    return () => { callIdRef.current += 1; stopRef.current?.(); }; // leaving: drop any last chunk of this call
+  }, []);
   useEffect(() => { if (SPOKEN[risk.level]) speak(SPOKEN[risk.level]); }, [risk.level]);
 
-  function onChunk(blob) {
-    const callId = callIdRef.current;
-    setPending((p) => p + 1);
-    sendChunk(blob).then((verdict) => {
-      setPending((p) => p - 1);
-      if (callId === callIdRef.current) setRisk((r) => addVerdict(r, verdict));
-    });
+  // Each call gets its own id, fixed when recording starts. A chunk from an older call (e.g. the final chunk
+  // flushed when a new demo clip starts) is dropped before upload, so it can never touch the new call's risk.
+  function chunkHandler(callId) {
+    return (blob) => {
+      if (callId !== callIdRef.current) return;
+      setPending((p) => p + 1);
+      sendChunk(blob).then((verdict) => {
+        setPending((p) => p - 1);
+        if (callId === callIdRef.current) setRisk((r) => addVerdict(r, verdict));
+      });
+    };
   }
 
   async function start(which) {
+    if (startingRef.current) return; // ignore double taps while starting
+    startingRef.current = true;
+    callIdRef.current += 1; // new call: older chunks are now stale
+    const callId = callIdRef.current;
     stopRef.current?.();
-    callIdRef.current += 1;
+    stopRef.current = null;
     setRisk(INITIAL_RISK);
+    setPending(0);
     setPopupClosed(false);
     setError('');
     try {
+      const onChunk = chunkHandler(callId);
       stopRef.current = which === 'mic'
         ? await startMic(onChunk)
         : await startDemoClip(`/demo-audio/${encodeURIComponent(which)}`, onChunk, () => setMode((m) => (m === which ? 'ended' : m)));
       setMode(which);
+      setRunning(which);
     } catch (err) {
       setMode(which === 'mic' ? null : 'pick');
-      setError(which === 'mic' ? 'Microphone not allowed. Allow it in the browser and try again.' : `Could not play clip (${err.message}).`);
+      setError(which === 'mic'
+        ? (err?.message === 'unsupported' ? 'This browser cannot record audio. Use Chrome.' : 'Microphone not allowed. Allow it in the browser and try again.')
+        : `Could not play clip (${err.message}).`);
+    } finally {
+      startingRef.current = false;
     }
   }
 
@@ -60,6 +80,12 @@ export default function CallCheck({ onVerify, onExit }) {
     stopRef.current?.();
     stopRef.current = null;
     setMode('ended');
+  }
+
+  function verify() {
+    stop();
+    callIdRef.current += 1; // the call is over; ignore late chunks
+    onVerify();
   }
 
   const m = METER[risk.level];
@@ -101,8 +127,11 @@ export default function CallCheck({ onVerify, onExit }) {
     );
   }
 
+  const clipLabel = (c) => c.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+
   return (
     <main className="screen">
+      <p className="small">{running === 'mic' ? '🎙️ Listening to the microphone' : `🎬 Demo clip: ${clipLabel(running)}`}</p>
       <div className={`meter ${m.cls}`} role="status">
         <div className="meter-icon">{m.icon}</div>
         <div className="meter-word">{m.word}</div>
@@ -115,8 +144,8 @@ export default function CallCheck({ onVerify, onExit }) {
       {mode === 'ended'
         ? <p className="small">Listening stopped.</p>
         : <button className="big secondary" onClick={stop}>⏹️ Stop listening</button>}
-      {risk.level !== 'idle' && risk.level !== 'green' && <button className="big" onClick={() => { stop(); onVerify(); }}>🔐 VERIFY the caller</button>}
-      <button className="big secondary" onClick={() => { stop(); onExit(); }}>Back</button>
+      {risk.level !== 'idle' && risk.level !== 'green' && <button className="big" onClick={verify}>🔐 VERIFY the caller</button>}
+      <button className="big secondary" onClick={() => { stop(); callIdRef.current += 1; onExit(); }}>Back</button>
 
       {risk.level === 'red' && !popupClosed && (
         <div className="popup" role="alertdialog" aria-label="Possible scam">
@@ -124,7 +153,7 @@ export default function CallCheck({ onVerify, onExit }) {
           <h1>This may be a scam</h1>
           <p className="popup-text">Do not send money.<br />Verify first.</p>
           {latest?.reason && <p>{latest.reason}</p>}
-          <button className="big" onClick={() => { stop(); onVerify(); }}>🔐 VERIFY</button>
+          <button className="big" onClick={verify}>🔐 VERIFY</button>
           <button className="big secondary" onClick={() => setPopupClosed(true)}>Close</button>
         </div>
       )}

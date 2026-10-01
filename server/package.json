@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "models": "node list-models.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.25.0",

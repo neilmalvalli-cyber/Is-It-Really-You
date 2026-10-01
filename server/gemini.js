@@ -128,6 +128,12 @@ function getClient() {
 }
 
 // Returns a validated verdict or UNKNOWN. Never throws, never logs audio, the key, or raw model output.
+// Optional GEMINI_FALLBACK_MODEL: used only when the primary model's transient retries are exhausted
+// (503/429/5xx/timeout/network) or the primary model is not found (404). Never on 400/401/403.
+export function shouldUseFallback(err) {
+  return isRetryable(err) || err?.status === 404;
+}
+
 export async function checkAudio(buffer, mimeType, { generate, retry } = {}) {
   try {
     const gen = generate ?? ((req) => {
@@ -135,8 +141,8 @@ export async function checkAudio(buffer, mimeType, { generate, retry } = {}) {
       if (!c) throw new Error('GEMINI_API_KEY not set');
       return c.models.generateContent(req);
     });
-    const res = await generateWithRetry(gen, {
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    const request = (model) => ({
+      model,
       contents: [{
         role: 'user',
         parts: [
@@ -150,7 +156,17 @@ export async function checkAudio(buffer, mimeType, { generate, retry } = {}) {
         responseSchema: RESPONSE_SCHEMA,
         temperature: 0,
       },
-    }, retry);
+    });
+    const primary = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const fallback = process.env.GEMINI_FALLBACK_MODEL?.trim();
+    let res;
+    try {
+      res = await generateWithRetry(gen, request(primary), retry);
+    } catch (err) {
+      if (!fallback || fallback === primary || !shouldUseFallback(err)) throw err;
+      console.warn(`scam-check: primary model failed (${err?.status ?? err?.name ?? 'error'}), trying fallback model`);
+      res = await generateWithRetry(gen, request(fallback), retry);
+    }
     return validateVerdict(res?.text);
   } catch (err) {
     console.error('scam-check failed:', safeMessage(err));

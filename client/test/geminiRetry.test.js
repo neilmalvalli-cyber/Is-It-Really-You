@@ -144,3 +144,63 @@ describe('/api/scam-check with retries', () => {
     err.mockRestore();
   });
 });
+
+import { checkAudio, shouldUseFallback } from '../../server/gemini.js';
+
+describe('optional GEMINI_FALLBACK_MODEL', () => {
+  const noWait = { sleep: async () => {} };
+  let warn; let err;
+  beforeAll(() => { warn = vi.spyOn(console, 'warn').mockImplementation(() => {}); err = vi.spyOn(console, 'error').mockImplementation(() => {}); });
+  afterAll(() => { warn.mockRestore(); err.mockRestore(); delete process.env.GEMINI_FALLBACK_MODEL; delete process.env.GEMINI_MODEL; });
+
+  const run = async (primaryError, { fallback = 'fallback-model', fallbackOk = true } = {}) => {
+    process.env.GEMINI_MODEL = 'primary-model';
+    if (fallback) process.env.GEMINI_FALLBACK_MODEL = fallback; else delete process.env.GEMINI_FALLBACK_MODEL;
+    const models = [];
+    const generate = async (req) => {
+      models.push(req.model);
+      if (req.model === 'primary-model') throw primaryError;
+      if (!fallbackOk) throw apiErr(503);
+      return OK;
+    };
+    const verdict = await checkAudio(Buffer.from('audio-bytes'), 'audio/webm', { generate, retry: noWait });
+    return { verdict, models };
+  };
+
+  it('primary 503 exhausted → fallback model succeeds with a real verdict', async () => {
+    const { verdict, models } = await run(apiErr(503));
+    expect(verdict.risk).toBe('high');
+    expect(models).toEqual([...Array(5).fill('primary-model'), 'fallback-model']);
+  });
+
+  it('primary 404 (model not found) → fallback used', async () => {
+    const { verdict, models } = await run(apiErr(404));
+    expect(verdict.risk).toBe('high');
+    expect(models).toEqual(['primary-model', 'fallback-model']);
+  });
+
+  it.each([400, 401, 403])('primary %i → NO fallback, fail-safe unknown', async (status) => {
+    const { verdict, models } = await run(apiErr(status));
+    expect(verdict).toEqual({ risk: 'unknown' });
+    expect(models).toEqual(['primary-model']);
+  });
+
+  it('no fallback configured → primary retries only, then unknown', async () => {
+    const { verdict, models } = await run(apiErr(503), { fallback: '' });
+    expect(verdict).toEqual({ risk: 'unknown' });
+    expect(models).toHaveLength(5);
+  });
+
+  it('both models exhausted → unknown (fail-safe kept)', async () => {
+    const { verdict, models } = await run(apiErr(503), { fallbackOk: false });
+    expect(verdict).toEqual({ risk: 'unknown' });
+    expect(models).toHaveLength(10);
+  });
+
+  it('shouldUseFallback', () => {
+    expect(shouldUseFallback(apiErr(503))).toBe(true);
+    expect(shouldUseFallback(apiErr(404))).toBe(true);
+    expect(shouldUseFallback(apiErr(403))).toBe(false);
+    expect(shouldUseFallback(new Error('GEMINI_API_KEY not set'))).toBe(false);
+  });
+});

@@ -18,7 +18,8 @@ import { speak } from './lib/speak.js';
 const STATUS_TEXT = {
   connecting: '⏳ Connecting…',
   connected: '✅ Connected',
-  offline: '⚠️ Offline',
+  offline: '⚠️ Disconnected — retrying…',
+  reconnecting: '🔄 Reconnecting…',
   rejected: '⚠️ Server rejected device',
 };
 
