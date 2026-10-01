@@ -39,7 +39,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEMO_DIR = path.join(ROOT, 'demo-audio');
 const DEMO_RE = /\.(webm|ogg|mp3|m4a|wav|aac|flac)$/i;
 
-export function createAppServer({ log = console.log, generate } = {}) {
+export function createAppServer({ log = console.log, generate, retry } = {}) {
   const app = express();
   const httpServer = createServer(app);
   const io = new Server(httpServer, { maxHttpBufferSize: 16 * 1024 });
@@ -58,7 +58,7 @@ export function createAppServer({ log = console.log, generate } = {}) {
       if (err) return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json(UNKNOWN);
       const file = req.file;
       if (!file || !file.buffer?.length) return res.status(400).json(UNKNOWN);
-      const verdict = await checkAudio(file.buffer, file.mimetype.split(';')[0], { generate });
+      const verdict = await checkAudio(file.buffer, file.mimetype.split(';')[0], { generate, retry });
       file.buffer = null; // discard audio
       log(`scam-check: ${verdict.risk}`);
       res.json(verdict);

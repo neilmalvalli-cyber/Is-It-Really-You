@@ -75,6 +75,51 @@ export function validateVerdict(raw) {
   };
 }
 
+// Retry policy for transient Gemini failures: 503/429/other 5xx, timeouts and network errors.
+// 400/401/403/404 (bad request, bad key, wrong model) are never retried.
+export const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000]; // max 4 retries
+export const ATTEMPT_TIMEOUT_MS = 20_000;
+const NETWORK_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND', 'EPIPE',
+  'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT']);
+
+export function isRetryable(err) {
+  if (err?.name === 'TimeoutError') return true;
+  const status = typeof err?.status === 'number' ? err.status : typeof err?.code === 'number' ? err.code : null;
+  if (status !== null) return status === 429 || (status >= 500 && status !== 501);
+  const code = err?.code ?? err?.cause?.code;
+  return NETWORK_CODES.has(code) || (err instanceof TypeError && /fetch failed/i.test(err.message));
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(Object.assign(new Error(`timed out after ${ms} ms`), { name: 'TimeoutError' })), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function safeMessage(err) {
+  let msg = String(err?.message || err).slice(0, 200);
+  const key = process.env.GEMINI_API_KEY;
+  if (key) msg = msg.split(key).join('***');
+  return msg.replace(/key=[^&\s]+/gi, 'key=***');
+}
+
+// Calls gen(req) with per-attempt timeout and exponential backoff on transient errors. Throws the last error.
+export async function generateWithRetry(gen, req, { delays = RETRY_DELAYS_MS, timeoutMs = ATTEMPT_TIMEOUT_MS, sleep = sleepMs } = {}) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await withTimeout(Promise.resolve().then(() => gen(req)), timeoutMs);
+    } catch (err) {
+      if (attempt >= delays.length || !isRetryable(err)) throw err;
+      console.warn(`scam-check: Gemini ${err?.status ?? err?.name ?? 'error'}, retry ${attempt + 1}/${delays.length} in ${delays[attempt]} ms`);
+      await sleep(delays[attempt]);
+    }
+  }
+}
+
 let client = null;
 function getClient() {
   if (!process.env.GEMINI_API_KEY) return null;
@@ -83,14 +128,14 @@ function getClient() {
 }
 
 // Returns a validated verdict or UNKNOWN. Never throws, never logs audio, the key, or raw model output.
-export async function checkAudio(buffer, mimeType, { generate } = {}) {
+export async function checkAudio(buffer, mimeType, { generate, retry } = {}) {
   try {
     const gen = generate ?? ((req) => {
       const c = getClient();
       if (!c) throw new Error('GEMINI_API_KEY not set');
       return c.models.generateContent(req);
     });
-    const res = await gen({
+    const res = await generateWithRetry(gen, {
       model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
       contents: [{
         role: 'user',
@@ -105,13 +150,10 @@ export async function checkAudio(buffer, mimeType, { generate } = {}) {
         responseSchema: RESPONSE_SCHEMA,
         temperature: 0,
       },
-    });
+    }, retry);
     return validateVerdict(res?.text);
   } catch (err) {
-    let msg = String(err?.message || err).slice(0, 200);
-    const key = process.env.GEMINI_API_KEY;
-    if (key) msg = msg.split(key).join('***');
-    console.error('scam-check failed:', msg.replace(/key=[^&\s]+/gi, 'key=***'));
+    console.error('scam-check failed:', safeMessage(err));
     return UNKNOWN;
   }
 }
